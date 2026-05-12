@@ -1,10 +1,12 @@
-from django.contrib.auth.models import User
-from django.urls.request import RequestFactory
+from django.contrib.auth import get_user_model
 from rest_framework.test import APITestCase
 from rest_framework import status
 from .models import Facultad, Materia
 
+User = get_user_model()
+
 class UserIsolationTest(APITestCase):
+
     def setUp(self):
         self.facultad = Facultad.objects.create(nombre="Facultad de Ingeniería", sede="Sede Central")
         self.user1 = User.objects.create_user(username='user1', password='password123', facultad=self.facultad)

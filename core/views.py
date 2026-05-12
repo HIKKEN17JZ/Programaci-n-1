@@ -25,5 +25,8 @@ class ExamenViewSet(viewsets.ModelViewSet):
         return Examen.objects.filter(materia__usuario=self.request.user)
 
     def perform_create(self, serializer):
-        # Note: the user is implicit via the Materia relationship
+        materia = serializer.validated_data['materia']
+        if materia.usuario != self.request.user:
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied("No puedes crear un examen para una materia que no te pertenece.")
         serializer.save()
