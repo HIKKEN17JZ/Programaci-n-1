@@ -1,5 +1,4 @@
 from django.db import models
-from django.contrib.auth.models import AbstractUser
 
 class Facultad(models.Model):
     nombre = models.CharField(max_length=150)
@@ -7,10 +6,6 @@ class Facultad(models.Model):
 
     def __str__(self):
         return self.nombre
-
-class User(AbstractUser):
-    facultad = models.ForeignKey(Facultad, on_delete=models.SET_NULL, null=True, blank=True)
-    plan_estudio_nombre = models.CharField(max_length=150, blank=True)
 
 class Materia(models.Model):
     ESTADOS_MATERIA = [
@@ -21,7 +16,7 @@ class Materia(models.Model):
         ('REC', 'Recursando'),
     ]
 
-    usuario = models.ForeignKey(User, on_delete=models.CASCADE, related_name='materias')
+    usuario = models.ForeignKey('users.User', on_delete=models.CASCADE, related_name='materias')
     nombre = models.CharField(max_length=150)
     año_dictado = models.IntegerField()
     creditos_totales = models.IntegerField(default=0)

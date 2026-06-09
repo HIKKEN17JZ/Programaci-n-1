@@ -1,17 +1,11 @@
 
 from django.contrib import admin
-from .models import Facultad, User, Materia, Examen
+from .models import Facultad, Materia, Examen
 
 @admin.register(Facultad)
 class FacultadAdmin(admin.ModelAdmin):
     list_display = ('nombre', 'sede')
     search_fields = ('nombre',)
-
-@admin.register(User)
-class UserAdmin(admin.ModelAdmin):
-    list_display = ('username', 'email', 'facultad', 'plan_estudio_nombre')
-    list_filter = ('facultad',)
-    search_fields = ('username', 'email')
 
 @admin.register(Materia)
 class MateriaAdmin(admin.ModelAdmin):

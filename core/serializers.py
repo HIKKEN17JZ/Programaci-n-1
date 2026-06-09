@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import User, Facultad, Materia, Examen
+from .models import Facultad, Materia, Examen
+from users.models import User
 
 class FacultadSerializer(serializers.ModelSerializer):
     class Meta:
