@@ -1,6 +1,7 @@
 from rest_framework import viewsets, permissions
 from .models import Facultad, Materia, Examen
 from .serializers import FacultadSerializer, MateriaSerializer, ExamenSerializer
+from users.permissions import IsAdminOrDocente, IsOwnerOrReadOnly
 
 class FacultadViewSet(viewsets.ModelViewSet):
     queryset = Facultad.objects.all()
@@ -9,20 +10,20 @@ class FacultadViewSet(viewsets.ModelViewSet):
 
 class MateriaViewSet(viewsets.ModelViewSet):
     serializer_class = MateriaSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAdminOrDocente, IsOwnerOrReadOnly]
 
     def get_queryset(self):
-        return Materia.objects.filter(usuario=self.request.user)
+        return Materia.objects.all()
 
     def perform_create(self, serializer):
         serializer.save(usuario=self.request.user)
 
 class ExamenViewSet(viewsets.ModelViewSet):
     serializer_class = ExamenSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAdminOrDocente, IsOwnerOrReadOnly]
 
     def get_queryset(self):
-        return Examen.objects.filter(materia__usuario=self.request.user)
+        return Examen.objects.all()
 
     def perform_create(self, serializer):
         materia = serializer.validated_data['materia']
