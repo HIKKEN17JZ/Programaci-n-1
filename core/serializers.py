@@ -7,11 +7,6 @@ class FacultadSerializer(serializers.ModelSerializer):
         model = Facultad
         fields = '__all__'
 
-class UserSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ['id', 'username', 'email', 'facultad', 'plan_estudio_nombre']
-
 class MateriaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Materia

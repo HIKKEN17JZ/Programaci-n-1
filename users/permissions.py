@@ -7,7 +7,7 @@ class IsAdminOrDocente(permissions.BasePermission):
     def has_permission(self, request, view):
         if request.method in permissions.SAFE_METHODS:
             return True
-        return request.user and request.user.role in ['ADMIN', 'DOCENTE']
+        return request.user and request.user.is_authenticated and request.user.role in ['ADMIN', 'DOCENTE']
 
 class IsOwnerOrReadOnly(permissions.BasePermission):
     """
@@ -23,4 +23,4 @@ class IsOwnerOrReadOnly(permissions.BasePermission):
         if user is None and hasattr(obj, 'materia'):
             user = obj.materia.usuario
             
-        return user == request.user
+        return user is not None and user == request.user

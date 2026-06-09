@@ -10,7 +10,8 @@ class UserSerializer(serializers.ModelSerializer):
 class RegisterSerializer(serializers.ModelSerializer):
     facultad_id = serializers.PrimaryKeyRelatedField(
         queryset=Facultad.objects.all(),
-        source='facultad'
+        source='facultad',
+        required=False
     )
 
     class Meta:

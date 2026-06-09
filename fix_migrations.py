@@ -4,7 +4,7 @@ import os
 # Use fallbacks from settings.py
 DB_NAME = os.getenv('DB_NAME', 'programacion1_db')
 DB_USER = os.getenv('DB_USER', 'postgres_django_user')
-DB_PASSWORD = os.getenv('DB_PASSWORD', 'secret')
+DB_PASSWORD = os.getenv('DB_PASSWORD')
 DB_HOST = os.getenv('DB_HOST', 'localhost')
 DB_PORT = os.getenv('DB_PORT', '5432')
 

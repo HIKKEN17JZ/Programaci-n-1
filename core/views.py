@@ -6,7 +6,7 @@ from users.permissions import IsAdminOrDocente, IsOwnerOrReadOnly
 class FacultadViewSet(viewsets.ModelViewSet):
     queryset = Facultad.objects.all()
     serializer_class = FacultadSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsAdminOrDocente]
 
 class MateriaViewSet(viewsets.ModelViewSet):
     serializer_class = MateriaSerializer
