@@ -1,0 +1,47 @@
+:root {
+  --color-primario: #2563eb;
+  --color-primario-oscuro: #1d4ed8;
+  --color-fondo: #f8fafc;
+  --color-fondo-suave: #eef2f7;
+  --color-tarjeta: #ffffff;
+  --color-borde: #dbe2ea;
+  --color-texto: #334155;
+  --color-texto-fuerte: #0f172a;
+  --color-texto-suave: #64748b;
+  --sombra: 0 1px 3px rgba(15, 23, 42, 0.08), 0 4px 12px rgba(15, 23, 42, 0.06);
+
+  font-family: system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  line-height: 1.5;
+  color: var(--color-texto);
+  background: var(--color-fondo);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+a {
+  text-decoration: none;
+}
+
+button,
+select,
+input {
+  font-family: inherit;
+}

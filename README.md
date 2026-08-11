@@ -90,6 +90,15 @@ graph TD
 
 ---
 
+## 🎨 Frontend 
+
+El cliente web se implementa con **React + Vite** y vive en el directorio `Frontend/`.
+
+- **Levantar la app**: `npm run dev` (desde `Frontend/`), se sirve en el puerto **3000**.
+- **Diseño de la Home**: ver [`Frontend/docs/diseno-home.md`](Frontend/docs/diseno-home.md) con el diagrama de navegación de la vista principal.
+
+---
+
 ## ⚙️ Configuración Local
 
 ### Requisitos
