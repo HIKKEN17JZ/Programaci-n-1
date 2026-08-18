@@ -37,7 +37,7 @@ const semaforo = obtenerSemaforo(porcentaje)
 function Home() {
   return (
     <main className="flex-grow-1">
-      <section className="bg-primary bg-gradient text-white text-center py-5">
+      <section className="bg-primary text-white text-center py-5">
         <div className="container">
           <span className="badge rounded-pill text-bg-light text-primary mb-3">
             Seguimiento académico
@@ -101,8 +101,8 @@ function Home() {
                   <p className="card-text">
                     {avance.creditosObtenidos} de {avance.creditosTotales} créditos
                   </p>
-                  <div className="progress mb-3" role="progressbar" aria-valuenow={porcentaje} aria-valuemin={0} aria-valuemax={100}>
-                    <div className="progress-bar bg-success" style={{ width: `${porcentaje}%` }}>
+                  <div className="progress mb-3">
+                    <div className="progress-bar bg-success" role="progressbar" aria-valuenow={porcentaje} aria-valuemin={0} aria-valuemax={100} style={{ width: `${porcentaje}%` }}>
                       {porcentaje}%
                     </div>
                   </div>
@@ -139,7 +139,7 @@ function Home() {
                     {MESAS_MOCK.map((mesa) => (
                       <li key={`${mesa.materia}-${mesa.fecha}`} className="d-flex justify-content-between align-items-center mb-2">
                         <span>{mesa.materia} — {mesa.llamado}</span>
-                        <span className="badge text-bg-secondary">{mesa.nota === null ? 'Pendiente' : `Nota ${mesa.nota}`}</span>
+                        <span className={`badge ${mesa.nota === null ? 'text-bg-secondary' : 'text-bg-success'}`}>{mesa.nota === null ? 'Pendiente' : `Nota ${mesa.nota}`}</span>
                       </li>
                     ))}
                   </ul>
