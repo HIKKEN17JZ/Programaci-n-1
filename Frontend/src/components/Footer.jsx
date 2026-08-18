@@ -1,6 +1,6 @@
 function Footer() {
   return (
-    <footer className="bg-dark text-light py-5">
+    <footer className="bg-dark text-light py-5" role="contentinfo" aria-label="Pie de página">
       <div className="container">
         <div className="row gy-4">
           <div className="col-12 col-md-4">

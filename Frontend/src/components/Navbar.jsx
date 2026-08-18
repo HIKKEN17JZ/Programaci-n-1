@@ -12,7 +12,7 @@ function Navbar() {
             <li className="nav-item"><a className="nav-link" href="#">Plan de Estudio</a></li>
             <li className="nav-item"><a className="nav-link" href="#">Mesas de Examen</a></li>
           </ul>
-          <a href="#" className="btn btn-outline-light ms-lg-3 mt-2 mt-lg-0">Ingresar</a>
+          <a href="#" className="btn btn-outline-light ms-lg-3 mt-2 mt-lg-0" aria-label="Iniciar sesión">Ingresar</a>
         </div>
       </div>
     </nav>

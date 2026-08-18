@@ -5,8 +5,9 @@ const SEMAFORO = {
 }
 
 function obtenerSemaforo(porcentaje) {
-  if (porcentaje <= SEMAFORO.critico.rango[1]) return SEMAFORO.critico
-  if (porcentaje <= SEMAFORO.enProceso.rango[1]) return SEMAFORO.enProceso
+  const p = Math.max(0, Math.min(100, porcentaje))
+  if (p <= SEMAFORO.critico.rango[1]) return SEMAFORO.critico
+  if (p <= SEMAFORO.enProceso.rango[1]) return SEMAFORO.enProceso
   return SEMAFORO.avanzado
 }
 
@@ -102,7 +103,7 @@ function Home() {
                     {avance.creditosObtenidos} de {avance.creditosTotales} créditos
                   </p>
                   <div className="progress mb-3">
-                    <div className="progress-bar bg-success" role="progressbar" aria-valuenow={porcentaje} aria-valuemin={0} aria-valuemax={100} style={{ width: `${porcentaje}%` }}>
+                    <div className={`progress-bar ${semaforo.clase}`} role="progressbar" aria-valuenow={porcentaje} aria-valuemin={0} aria-valuemax={100} style={{ width: `${porcentaje}%` }}>
                       {porcentaje}%
                     </div>
                   </div>
