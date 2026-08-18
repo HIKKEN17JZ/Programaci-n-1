@@ -140,7 +140,9 @@ function Home() {
                     {MESAS_MOCK.map((mesa) => (
                       <li key={`${mesa.materia}-${mesa.fecha}`} className="d-flex justify-content-between align-items-center mb-2">
                         <span>{mesa.materia} — {mesa.llamado}</span>
-                        <span className={`badge ${mesa.nota === null ? 'text-bg-secondary' : 'text-bg-success'}`}>{mesa.nota === null ? 'Pendiente' : `Nota ${mesa.nota}`}</span>
+                        <span className={`badge ${mesa.nota === null ? 'text-bg-secondary' : 'text-bg-success'}`}>
+                          {mesa.nota === null ? 'Pendiente' : `Nota ${mesa.nota}`}
+                        </span>
                       </li>
                     ))}
                   </ul>
