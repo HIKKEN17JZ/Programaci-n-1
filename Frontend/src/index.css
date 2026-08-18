@@ -1,5 +1,8 @@
 :root {
-  --bs-primary: #0d6efd;
+  --bs-primary: #c05621;
+  --bs-primary-rgb: 192, 86, 33;
+  --bs-link-color: #c05621;
+  --bs-link-hover-color: #9a431a;
 }
 
 body {

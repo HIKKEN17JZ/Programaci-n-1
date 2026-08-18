@@ -1,6 +1,6 @@
 function Navbar() {
   return (
-    <nav className="navbar navbar-expand-lg navbar-dark bg-primary bg-gradient shadow-sm">
+    <nav className="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
       <div className="container">
         <a className="navbar-brand fw-semibold" href="#">Gestión de Carrera</a>
         <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navegacionPrincipal" aria-controls="navegacionPrincipal" aria-expanded="false" aria-label="Abrir navegación">
