@@ -10,11 +10,8 @@ export function AuthProvider({ children }) {
 
   const login = useCallback((username, password) => {
     const found = users.find((u) => u.username === username)
-    if (!found) {
-      return { ok: false, message: 'Usuario no encontrado' }
-    }
-    if (found.password !== password) {
-      return { ok: false, message: 'Contraseña incorrecta' }
+    if (!found || found.password !== password) {
+      return { ok: false, message: 'Usuario o contraseña incorrecta' }
     }
     setUser({ username: found.username, email: found.email, rol: found.rol })
     return { ok: true }
