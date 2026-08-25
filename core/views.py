@@ -25,7 +25,9 @@ class ExamenViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAdminOrDocente, IsOwnerOrReadOnly]
 
     def get_queryset(self):
-        return Examen.objects.all()
+        if self.request.user.role == 'ADMIN':
+            return Examen.objects.all()
+        return Examen.objects.filter(materia__usuario=self.request.user)
 
     def perform_create(self, serializer):
         materia = serializer.validated_data['materia']
