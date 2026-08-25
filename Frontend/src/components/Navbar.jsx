@@ -20,8 +20,8 @@ function Navbar() {
         <div className="collapse navbar-collapse" id="navegacionPrincipal">
           <ul className="navbar-nav ms-auto align-items-lg-center gap-lg-2">
             <li className="nav-item"><Link to="/" className="nav-link active" aria-current="page">Inicio</Link></li>
-            <li className="nav-item"><a className="nav-link" href="#">Plan de Estudio</a></li>
-            <li className="nav-item"><a className="nav-link" href="#">Mesas de Examen</a></li>
+            <li className="nav-item"><Link to="#" className="nav-link" onClick={(e) => e.preventDefault()}>Plan de Estudio</Link></li>
+            <li className="nav-item"><Link to="#" className="nav-link" onClick={(e) => e.preventDefault()}>Mesas de Examen</Link></li>
           </ul>
           {user ? (
             <>

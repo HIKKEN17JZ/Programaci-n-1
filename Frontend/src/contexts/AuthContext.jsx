@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useCallback, useState } from 'react'
+import { createContext, useCallback, useMemo, useState } from 'react'
 import { HARDCODED_USERS } from '../data/hardcodedUsers.js'
 
 export const AuthContext = createContext(null)
@@ -32,8 +32,10 @@ export function AuthProvider({ children }) {
     setUser(null)
   }, [])
 
+  const contextValue = useMemo(() => ({ user, login, register, logout }), [user, login, register, logout])
+
   return (
-    <AuthContext.Provider value={{ user, login, register, logout }}>
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   )

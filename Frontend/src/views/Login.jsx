@@ -51,6 +51,7 @@ function Login() {
                 value={username}
                 onChange={(event) => setUsername(event.target.value)}
                 autoComplete="username"
+                required
               />
             </div>
             <div className="mb-3">
@@ -62,6 +63,8 @@ function Login() {
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 autoComplete="current-password"
+                required
+                minLength={4}
               />
             </div>
             <button type="submit" className="btn btn-primary w-100">Ingresar</button>

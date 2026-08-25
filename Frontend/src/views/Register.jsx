@@ -44,6 +44,7 @@ function Register() {
                 value={username}
                 onChange={(event) => setUsername(event.target.value)}
                 autoComplete="username"
+                required
               />
             </div>
             <div className="mb-3">
@@ -55,6 +56,7 @@ function Register() {
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
                 autoComplete="email"
+                required
               />
             </div>
             <div className="mb-3">
@@ -66,6 +68,8 @@ function Register() {
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 autoComplete="new-password"
+                required
+                minLength={4}
               />
             </div>
             <button type="submit" className="btn btn-primary w-100">Registrarse</button>
