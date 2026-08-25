@@ -8,6 +8,9 @@ class FacultadSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class MateriaSerializer(serializers.ModelSerializer):
+    año_dictado = serializers.IntegerField(min_value=1900, max_value=2100)
+    creditos_totales = serializers.IntegerField(min_value=0)
+
     class Meta:
         model = Materia
         fields = '__all__'
