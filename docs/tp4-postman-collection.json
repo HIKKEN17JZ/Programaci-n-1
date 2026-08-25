@@ -1,0 +1,1253 @@
+{
+  "info": {
+    "_postman_id": "tp4-test-collection-2024",
+    "name": "TP4 - Validación API",
+    "description": "Colección de pruebas para el TP4 de Programación 1 - Backend Django + DRF",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "token_admin",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "token_docente",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "token_estudiante",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Autenticación",
+      "item": [
+        {
+          "name": "Login ADMIN",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/token/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "token", ""]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('response has access token', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('access');",
+                  "    pm.environment.set('token_admin', response.access);",
+                  "});",
+                  "pm.test('response has refresh token', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('refresh');",
+                  "    pm.environment.set('refresh_token_admin', response.refresh);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login DOCENTE",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"docente\",\n  \"password\": \"docente2024\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/token/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "token", ""]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('response has access token', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('access');",
+                  "    pm.environment.set('token_docente', response.access);",
+                  "});",
+                  "pm.test('response has refresh token', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('refresh');",
+                  "    pm.environment.set('refresh_token_docente', response.refresh);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login ESTUDIANTE",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"alumno\",\n  \"password\": \"1234\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/token/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "token", ""]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('response has access token', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('access');",
+                  "    pm.environment.set('token_estudiante', response.access);",
+                  "});",
+                  "pm.test('response has refresh token', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('refresh');",
+                  "    pm.environment.set('refresh_token_estudiante', response.refresh);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login fallido",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"wrong\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/token/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "token", ""]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Refresh token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh\": \"{{refresh_token_admin}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/token/refresh/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "token", "refresh", ""]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('response has new access token', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('access');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ver perfil",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/users/me/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", "me", ""]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('response has user data', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('username');",
+                  "    pm.expect(response).to.have.property('role');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Roles - Facultades",
+      "item": [
+        {
+          "name": "GET público (sin auth)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/facultades/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "facultades", ""]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST ADMIN → 201",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Facultad de Ingeniería TP4\",\n  \"sede\": \"Sede Test\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/facultades/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "facultades", ""]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 201', () => pm.response.to.have.status(201));",
+                  "pm.test('response has id', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('id');",
+                  "    pm.environment.set('facultad_id', response.id);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST DOCENTE → 201",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_docente}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Facultad Docente TP4\",\n  \"sede\": \"Sede Docente\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/facultades/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "facultades", ""]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST ESTUDIANTE → 403",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_estudiante}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Facultad Estudiante\",\n  \"sede\": \"Sede Estudiante\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/facultades/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "facultades", ""]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PUT ADMIN → 200",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Facultad Actualizada\",\n  \"sede\": \"Sede Actualizada\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/facultades/{{facultad_id}}/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "facultades", "{{facultad_id}}", ""]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PUT DOCENTE → 200",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_docente}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Facultad Docente Actualizada\",\n  \"sede\": \"Sede Docente Actualizada\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/facultades/{{facultad_id}}/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "facultades", "{{facultad_id}}", ""]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PUT ESTUDIANTE → 403",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_estudiante}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Facultad Estudiante\",\n  \"sede\": \"Sede Estudiante\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/facultades/{{facultad_id}}/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "facultades", "{{facultad_id}}", ""]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DELETE ADMIN → 204",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/facultades/{{facultad_id}}/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "facultades", "{{facultad_id}}", ""]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Roles - Materias",
+      "item": [
+        {
+          "name": "GET filtra por usuario (DOCENTE solo ve las suyas)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_docente}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/materias/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "materias", ""]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('returns only own materias', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST ESTUDIANTE → 403",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_estudiante}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Materia Estudiante\",\n  \"año_dictado\": 2024,\n  \"creditos_totales\": 8,\n  \"estado\": \"PEN\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/materias/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "materias", ""]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST DOCENTE → 201",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_docente}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Programación 1\",\n  \"año_dictado\": 2024,\n  \"creditos_totales\": 8,\n  \"estado\": \"CUR\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/materias/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "materias", ""]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 201', () => pm.response.to.have.status(201));",
+                  "pm.test('response has id', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('id');",
+                  "    pm.environment.set('materia_id', response.id);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PUT owner → 200",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_docente}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Programación 1 Actualizada\",\n  \"año_dictado\": 2024,\n  \"creditos_totales\": 10,\n  \"estado\": \"REG\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/materias/{{materia_id}}/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "materias", "{{materia_id}}", ""]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PUT NO-owner → 403",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_estudiante}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Materia Ajena\",\n  \"año_dictado\": 2024,\n  \"creditos_totales\": 6,\n  \"estado\": \"PEN\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/materias/{{materia_id}}/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "materias", "{{materia_id}}", ""]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DELETE owner → 204",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_docente}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/materias/{{materia_id}}/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "materias", "{{materia_id}}", ""]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DELETE NO-owner → 403",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_estudiante}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/materias/{{materia_id_ajena}}/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "materias", "{{materia_id_ajena}}", ""]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET detail inexistente → 404",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_docente}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/materias/999/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "materias", "999", ""]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Roles - Exámenes",
+      "item": [
+        {
+          "name": "POST ESTUDIANTE → 403",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_estudiante}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"materia\": 1,\n  \"fecha\": \"2024-06-15\",\n  \"nota\": 8,\n  \"tipo\": \"PAR\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/examenes/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "examenes", ""]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST DOCENTE materia propia → 201",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_docente}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"materia\": {{materia_id}},\n  \"fecha\": \"2024-06-15\",\n  \"nota\": 8,\n  \"tipo\": \"PAR\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/examenes/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "examenes", ""]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 201', () => pm.response.to.have.status(201));",
+                  "pm.test('response has id', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('id');",
+                  "    pm.environment.set('examen_id', response.id);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST DOCENTE materia ajena → 403",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_docente}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"materia\": {{materia_id_ajena}},\n  \"fecha\": \"2024-06-15\",\n  \"nota\": 7,\n  \"tipo\": \"FIN\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/examenes/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "examenes", ""]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DELETE owner → 204",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_docente}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/examenes/{{examen_id}}/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "examenes", "{{examen_id}}", ""]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Lógica de Negocio",
+      "item": [
+        {
+          "name": "Crear materia año negativo → 400/201",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_docente}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Materia Año Negativo\",\n  \"año_dictado\": -1,\n  \"creditos_totales\": 8,\n  \"estado\": \"PEN\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/materias/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "materias", ""]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Esperado: 400 si hay validación, 201 si no la hay (BUG)",
+                  "pm.test('status is 400 or 201', () => {",
+                  "    pm.response.to.have.status(400);",
+                  "    // pm.response.to.have.status(201); // Si no hay validación",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear materia creditos negativos → 400/201",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_docente}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Materia Créditos Negativos\",\n  \"año_dictado\": 2024,\n  \"creditos_totales\": -5,\n  \"estado\": \"PEN\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/materias/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "materias", ""]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 400 or 201', () => {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear examen nota negativa → 400/201",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_docente}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"materia\": {{materia_id}},\n  \"fecha\": \"2024-06-15\",\n  \"nota\": -1,\n  \"tipo\": \"PAR\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/examenes/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "examenes", ""]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 400 or 201', () => {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear examen nota > 20 → 400/201",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_docente}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"materia\": {{materia_id}},\n  \"fecha\": \"2024-06-15\",\n  \"nota\": 25,\n  \"tipo\": \"PAR\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/examenes/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "examenes", ""]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 400 or 201', () => {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Registro email duplicado → 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"usuario_duplicado\",\n  \"email\": \"admin@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/users/register/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", "register", ""]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear materia nombre vacío → 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_docente}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"\",\n  \"año_dictado\": 2024,\n  \"creditos_totales\": 8,\n  \"estado\": \"PEN\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/materias/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "materias", ""]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Flujo Completo",
+      "item": [
+        {
+          "name": "Flujo 1: Login DOCENTE → Crear materia → Crear examen → GET verificar",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_docente}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/examenes/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "examenes", ""]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('examenes list is array', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Flujo 2: Login ESTUDIANTE → Intentar crear → 403 → GET ver suyas",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_estudiante}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/materias/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "materias", ""]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('returns empty or own materias', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -13,7 +13,9 @@ class MateriaViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAdminOrDocente, IsOwnerOrReadOnly]
 
     def get_queryset(self):
-        return Materia.objects.all()
+        if self.request.user.role == 'ADMIN':
+            return Materia.objects.all()
+        return Materia.objects.filter(usuario=self.request.user)
 
     def perform_create(self, serializer):
         serializer.save(usuario=self.request.user)
