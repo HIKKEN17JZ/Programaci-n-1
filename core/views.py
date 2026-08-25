@@ -1,12 +1,12 @@
 from rest_framework import viewsets, permissions
 from .models import Facultad, Materia, Examen
 from .serializers import FacultadSerializer, MateriaSerializer, ExamenSerializer
-from users.permissions import IsAdminOrDocente, IsOwnerOrReadOnly
+from users.permissions import IsAdminOrDocente, IsAdminOnly, IsOwnerOrReadOnly
 
 class FacultadViewSet(viewsets.ModelViewSet):
     queryset = Facultad.objects.all()
     serializer_class = FacultadSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsAdminOrDocente]
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsAdminOnly]
 
 class MateriaViewSet(viewsets.ModelViewSet):
     serializer_class = MateriaSerializer
