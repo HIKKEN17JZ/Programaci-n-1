@@ -13,10 +13,10 @@ class UserIsolationTest(APITestCase):
         self.user2 = User.objects.create_user(username='user2', password='password123', facultad=self.facultad)
         
         self.materia1 = Materia.objects.create(
-            usuario=self.user1, nombre="Materia 1", año_dictado=1, creditos_totales=10
+            usuario=self.user1, nombre="Materia 1", año_dictado=2024, creditos_totales=10
         )
         self.materia2 = Materia.objects.create(
-            usuario=self.user2, nombre="Materia 2", año_dictado=1, creditos_totales=10
+            usuario=self.user2, nombre="Materia 2", año_dictado=2024, creditos_totales=10
         )
 
     def test_user_cannot_see_others_materias(self):

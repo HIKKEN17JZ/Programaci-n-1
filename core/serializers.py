@@ -1,6 +1,5 @@
 from rest_framework import serializers
 from .models import Facultad, Materia, Examen
-from users.models import User
 
 class FacultadSerializer(serializers.ModelSerializer):
     class Meta:
@@ -19,7 +18,6 @@ class ExamenSerializer(serializers.ModelSerializer):
     class Meta:
         model = Examen
         fields = '__all__'
-        read_only_fields = ['materia']
 
     def validate_nota(self, value):
         if value is not None and (value < 0 or value > 20):

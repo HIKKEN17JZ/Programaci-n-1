@@ -24,30 +24,30 @@
 | 2.2 | /api/facultades/ | GET | CUALQUIER | Listar facultades con autenticacion | 200 OK + lista de facultades | Pendiente |
 | 2.3 | /api/facultades/{id}/ | GET | ANON | Obtener detalle de una facultad sin auth | 200 OK | Pendiente |
 | 2.4 | /api/facultades/ | POST | ADMIN | Crear facultad con datos validos (nombre, sede) | 201 Created | Pendiente |
-| 2.5 | /api/facultades/ | POST | DOCENTE | Crear facultad con datos validos | 201 Created | Pendiente |
-| 2.6 | /api/facultades/ | POST | ESTUDIANTE | Crear facultad | 403 Forbidden (IsAdminOrDocente bloquea ESTUDIANTE) | Pendiente |
+| 2.5 | /api/facultades/ | POST | DOCENTE | Crear facultad con datos validos | 403 Forbidden (IsAdminOnly bloquea DOCENTE) | Pendiente |
+| 2.6 | /api/facultades/ | POST | ESTUDIANTE | Crear facultad | 403 Forbidden (IsAdminOnly bloquea ESTUDIANTE) | Pendiente |
 | 2.7 | /api/facultades/ | POST | ANON | Crear facultad sin autenticacion | 403 Forbidden | Pendiente |
 | 2.8 | /api/facultades/{id}/ | PUT | ADMIN | Actualizar facultad existente | 200 OK | Pendiente |
-| 2.9 | /api/facultades/{id}/ | PUT | DOCENTE | Actualizar facultad existente | 200 OK (DOCENTE tiene permiso de escritura) | Pendiente |
+| 2.9 | /api/facultades/{id}/ | PUT | DOCENTE | Actualizar facultad existente | 403 Forbidden (IsAdminOnly bloquea DOCENTE) | Pendiente |
 | 2.10 | /api/facultades/{id}/ | PUT | ESTUDIANTE | Actualizar facultad | 403 Forbidden | Pendiente |
-| 2.11 | /api/facultades/{id}/ | DELETE | DOCENTE | Eliminar facultad | 403 Forbidden (IsOwnerOrReadOnly: no es owner, Facultad no tiene campo usuario) | Pendiente |
-| 2.12 | /api/facultades/{id}/ | DELETE | ADMIN | Eliminar facultad | 204 No Content (o 403 si IsOwnerOrReadOnly lo bloquea - VER BUG #1) | Pendiente |
+| 2.11 | /api/facultades/{id}/ | DELETE | DOCENTE | Eliminar facultad | 403 Forbidden (IsAdminOnly bloquea DOCENTE) | Pendiente |
+| 2.12 | /api/facultades/{id}/ | DELETE | ADMIN | Eliminar facultad | 204 No Content | Pendiente |
 | 2.13 | /api/facultades/{id}/ | DELETE | ANON | Eliminar facultad sin auth | 403 Forbidden | Pendiente |
 
 ## 3. CRUD Materias (roles + ownership)
 
 | # | Endpoint | Metodo | Rol | Accion | Resultado Esperado | Estado |
 |---|----------|--------|-----|--------|-------------------|--------|
-| 3.1 | /api/materias/ | GET | DOCENTE | Listar materias (el endpoint retorna todas, no solo las propias - VER BUG #2) | 200 OK + todas las materias (deberia ser solo las propias) | Pendiente |
-| 3.2 | /api/materias/ | GET | DOCENTE | Listar materias propias (comportamiento esperado ideal) | 200 OK + solo materias del usuario | Pendiente |
-| 3.3 | /api/materias/ | GET | ESTUDIANTE | Listar materias propias | 200 OK + solo materias del usuario (deberia, VER BUG #2) | Pendiente |
-| 3.4 | /api/materias/ | GET | ANON | Listar materias sin auth | 403 Forbidden (IsAdminOrDocente requiere auth para escritura, pero lectura pasa por SAFE_METHODS -> 200 OK) | Pendiente |
+| 3.1 | /api/materias/ | GET | DOCENTE | Listar materias propias | 200 OK + solo materias del usuario | Pendiente |
+| 3.2 | /api/materias/ | GET | ESTUDIANTE | Listar materias propias | 200 OK + solo materias del usuario | Pendiente |
+| 3.3 | /api/materias/ | GET | ADMIN | Listar todas las materias | 200 OK + todas las materias | Pendiente |
+| 3.4 | /api/materias/ | GET | ANON | Listar materias sin auth | 200 OK + lista vacia (get_queryset retorna none) | Pendiente |
 | 3.5 | /api/materias/ | POST | ESTUDIANTE | Crear materia | 403 Forbidden (IsAdminOrDocente bloquea ESTUDIANTE) | Pendiente |
 | 3.6 | /api/materias/ | POST | DOCENTE | Crear materia con datos validos (nombre, ano_dictado, creditos_totales, estado) | 201 Created + usuario asignado automaticamente via perform_create | Pendiente |
 | 3.7 | /api/materias/ | POST | ADMIN | Crear materia con datos validos | 201 Created (perform_create asigna request.user como usuario) | Pendiente |
 | 3.8 | /api/materias/{id}/ | PUT | DOCENTE owner | Actualizar materia propia | 200 OK | Pendiente |
 | 3.9 | /api/materias/{id}/ | PUT | DOCENTE NO-owner | Actualizar materia de otro usuario | 403 Forbidden (IsOwnerOrReadOnly bloquea) | Pendiente |
-| 3.10 | /api/materias/{id}/ | PUT | ADMIN | Actualizar materia ajena (ADMIN no es owner) | 403 Forbidden (IsOwnerOrReadOnly bloquea, ADMIN no tiene bypass de ownership) | Pendiente |
+| 3.10 | /api/materias/{id}/ | PUT | ADMIN | Actualizar materia ajena | 200 OK (IsOwnerOrReadOnly tiene bypass para ADMIN) | Pendiente |
 | 3.11 | /api/materias/{id}/ | DELETE | DOCENTE owner | Eliminar materia propia | 204 No Content | Pendiente |
 | 3.12 | /api/materias/{id}/ | DELETE | DOCENTE NO-owner | Eliminar materia ajena | 403 Forbidden | Pendiente |
 | 3.13 | /api/materias/999/ | GET | DOCENTE | Obtener materia con id inexistente | 404 Not Found | Pendiente |
@@ -56,28 +56,28 @@
 
 | # | Endpoint | Metodo | Rol | Accion | Resultado Esperado | Estado |
 |---|----------|--------|-----|--------|-------------------|--------|
-| 4.1 | /api/examenes/ | GET | DOCENTE | Listar examenes (el endpoint retorna todos - VER BUG #3) | 200 OK + todos los examenes (deberia ser solo los propios) | Pendiente |
-| 4.2 | /api/examenes/ | GET | DOCENTE | Listar examenes de materias propias (comportamiento esperado ideal) | 200 OK + solo examenes de materias del usuario | Pendiente |
-| 4.3 | /api/examenes/ | GET | ESTUDIANTE | Listar examenes propios | 200 OK + solo examenes de sus materias (deberia, VER BUG #3) | Pendiente |
+| 4.1 | /api/examenes/ | GET | DOCENTE | Listar examenes de materias propias | 200 OK + solo examenes de materias del usuario | Pendiente |
+| 4.2 | /api/examenes/ | GET | ESTUDIANTE | Listar examenes propios | 200 OK + solo examenes de sus materias | Pendiente |
+| 4.3 | /api/examenes/ | GET | ADMIN | Listar todos los examenes | 200 OK + todos los examenes | Pendiente |
 | 4.4 | /api/examenes/ | POST | ESTUDIANTE | Crear examen | 403 Forbidden (IsAdminOrDocente bloquea ESTUDIANTE) | Pendiente |
 | 4.5 | /api/examenes/ | POST | DOCENTE | Crear examen para materia propia (datos validos: materia, fecha, nota, tipo) | 201 Created | Pendiente |
 | 4.6 | /api/examenes/ | POST | DOCENTE | Crear examen para materia ajena | 403 Forbidden (PermissionDenied en perform_create) | Pendiente |
-| 4.7 | /api/examenes/ | POST | ADMIN | Crear examen para materia de otro usuario | 201 Created (perform_create solo valida ownership, ADMIN bypass si es admin - VER BUG #4) | Pendiente |
+| 4.7 | /api/examenes/ | POST | ADMIN | Crear examen para materia de otro usuario | 201 Created (ADMIN tiene bypass en perform_create) | Pendiente |
 | 4.8 | /api/examenes/{id}/ | DELETE | DOCENTE owner (via materia) | Eliminar examen de materia propia | 204 No Content | Pendiente |
 | 4.9 | /api/examenes/{id}/ | DELETE | DOCENTE NO-owner | Eliminar examen de materia ajena | 403 Forbidden (IsOwnerOrReadOnly via materia.usuario) | Pendiente |
-| 4.10 | /api/examenes/{id}/ | DELETE | ESTUDIANTE | Eliminar examen | 403 Forbidden | Pendiente |
+| 4.10 | /api/examenes/{id}/ | DELETE | ADMIN | Eliminar examen de materia ajena | 204 No Content (IsOwnerOrReadOnly tiene bypass para ADMIN) | Pendiente |
 
 ## 5. Validacion de Reglas de Negocio (Casos de Borde)
 
 | # | Endpoint | Metodo | Rol | Accion | Resultado Esperado | Estado |
 |---|----------|--------|-----|--------|-------------------|--------|
-| 5.1 | /api/materias/ | POST | DOCENTE | Crear materia con ano_dictado negativo (-1) | 400 Bad Request (validacion) o 201 (si no hay validacion - VER BUG #5) | Pendiente |
-| 5.2 | /api/materias/ | POST | DOCENTE | Crear materia con creditos_totales negativos (-5) | 400 Bad Request o 201 (VER BUG #6) | Pendiente |
-| 5.3 | /api/materias/ | POST | DOCENTE | Crear materia con nombre vacio ("") | 400 Bad Request (CharField max_length impide string vacio por defecto) | Pendiente |
+| 5.1 | /api/materias/ | POST | DOCENTE | Crear materia con ano_dictado negativo (-1) | 400 Bad Request (validacion en serializer) | Pendiente |
+| 5.2 | /api/materias/ | POST | DOCENTE | Crear materia con creditos_totales negativos (-5) | 400 Bad Request (validacion en serializer) | Pendiente |
+| 5.3 | /api/materias/ | POST | DOCENTE | Crear materia con nombre vacio ("") | 400 Bad Request (CharField requiere string no vacio) | Pendiente |
 | 5.4 | /api/materias/ | POST | DOCENTE | Crear materia con estado invalido ("XXX") | 400 Bad Request (choices del modelo) | Pendiente |
 | 5.5 | /api/materias/ | POST | DOCENTE | Crear materia sin campos requeridos | 400 Bad Request | Pendiente |
-| 5.6 | /api/examenes/ | POST | DOCENTE | Crear examen con nota negativa (-1) | 400 Bad Request o 201 (VER BUG #7) | Pendiente |
-| 5.7 | /api/examenes/ | POST | DOCENTE | Crear examen con nota > 20 (ej: 25) | 400 Bad Request o 201 (VER BUG #8 - no hay validacion de rango en modelo ni serializer) | Pendiente |
+| 5.6 | /api/examenes/ | POST | DOCENTE | Crear examen con nota negativa (-1) | 400 Bad Request (validacion en serializer) | Pendiente |
+| 5.7 | /api/examenes/ | POST | DOCENTE | Crear examen con nota > 20 (ej: 25) | 400 Bad Request (validacion en serializer) | Pendiente |
 | 5.8 | /api/examenes/ | POST | DOCENTE | Crear examen sin materia | 400 Bad Request (FK requerido) | Pendiente |
 | 5.9 | /api/examenes/ | POST | DOCENTE | Crear examen sin fecha | 400 Bad Request (DateField requerido) | Pendiente |
 | 5.10 | /api/examenes/ | POST | DOCENTE | Crear examen con tipo invalido ("XXX") | 400 Bad Request (choices del modelo) | Pendiente |
@@ -93,56 +93,40 @@
 
 ---
 
-## Bugs Detectados en Revision del Codigo
+## Bugs Detectados y Corregidos
 
-### BUG #1 - FacultadViewSet: DELETE bloqueado para ADMIN por IsOwnerOrReadOnly
-- **Archivo**: `core/views.py:9` + `users/permissions.py:12-26`
-- **Problema**: El FacultadViewSet usa `permission_classes = [IsAuthenticatedOrReadOnly, IsAdminOrDocente]`. Falta `IsOwnerOrReadOnly` en la lista, pero el problema real es que **Facultad no tiene campo `usuario`**, asi que si se agrega `IsOwnerOrReadOnly`, el `has_object_permission` busca `obj.usuario` (None) y luego `obj.materia` (None) y retorna False. Ningun usuario podria eliminar/actualizar una Facultad.
-- **Impacto**: El DELETE de Facultad funciona actualmente porque NO usa IsOwnerOrReadOnly, pero el DELETE/PUT de Facultad es accesible para DOCENTE y ADMIN por igual (IsAdminOrDocente). Si se quisiera restrictivo solo para ADMIN, hay que crear un permiso dedicado.
+### BUG #1 - FacultadViewSet: solo ADMIN puede modificar/borrar ✅ CORREGIDO
+- **Archivo**: `core/views.py:9` + `users/permissions.py:12-19`
+- **Solucion**: Se creo permiso `IsAdminOnly` y se aplico a FacultadViewSet.
 
-### BUG #2 - MateriaViewSet.get_queryset() no filtra por usuario
-- **Archivo**: `core/views.py:15-16`
-- **Problema**: `get_queryset()` retorna `Materia.objects.all()` en lugar de filtrar por `self.request.user`. Todos los usuarios autenticados (y anónimos en GET) pueden ver TODAS las materias de TODOS los usuarios.
-- **Impacto**: Falta total de aislamiento de datos. Los tests existentes en `core/tests.py` (test_user_cannot_see_others_materias) **deberian fallar** con este codigo.
-- **Solucion**: Cambiar a `return Materia.objects.filter(usuario=self.request.user)` (excepto para ADMIN, que podria ver todas).
+### BUG #2 - MateriaViewSet.get_queryset() no filtra por usuario ✅ CORREGIDO
+- **Archivo**: `core/views.py:16-20`
+- **Solucion**: Filtra por `usuario=self.request.user` (ADMIN ve todas).
 
-### BUG #3 - ExamenViewSet.get_queryset() no filtra por usuario
-- **Archivo**: `core/views.py:25-26`
-- **Problema**: Similar al BUG #2. `get_queryset()` retorna `Examen.objects.all()`. Todos los usuarios pueden ver todos los examenes.
-- **Impacto**: Falta de aislamiento. Cualquier usuario puede ver examenes de materias ajenas.
-- **Solucion**: Filtrar por las materias del usuario: `Examen.objects.filter(materia__usuario=self.request.user)`.
-
-### BUG #4 - ExamenViewSet.perform_create: ADMIN no puede crear examen para materia ajena
+### BUG #3 - ExamenViewSet.get_queryset() no filtra por usuario ✅ CORREGIDO
 - **Archivo**: `core/views.py:28-32`
-- **Problema**: `perform_create` valida `materia.usuario != self.request.user` y lanza PermissionDenied. Un ADMIN que intente crear un examen para una materia de otro usuario recibira 403. El ADMIN no tiene bypass para esta validacion.
-- **Impacto**: El ADMIN no puede administrar examenes de materia ajena.
+- **Solucion**: Filtra por `materia__usuario=self.request.user` (ADMIN ve todas).
 
-### BUG #5 - Materia: sin validacion de ano_dictado
-- **Archivo**: `core/models.py:21`
-- **Problema**: `ano_dictado` es un `IntegerField()` sin ` validators=[]` ni `min_value`. Se puede crear materia con año negativo, cero, o valores absurdos (99999).
-- **Impacto**: Datos inconsistentes en la base de datos.
+### BUG #4 - ExamenViewSet.perform_create: ADMIN no puede crear examen para materia ajena ✅ CORREGIDO
+- **Archivo**: `core/views.py:34`
+- **Solucion**: Se agrego bypass para ADMIN en la validacion de ownership.
 
-### BUG #6 - Materia: sin validacion de creditos_totales
-- **Archivo**: `core/models.py:22`
-- **Problema**: `creditos_totales` es `IntegerField(default=0)` sin validacion de valor minimo. Se pueden asignar creditos negativos.
-- **Impacto**: Datos inconsistentes.
+### BUG #5 - Materia: sin validacion de ano_dictado ✅ CORREGIDO
+- **Archivo**: `core/serializers.py:11`
+- **Solucion**: Se agrego `min_value=1900, max_value=2100`.
 
-### BUG #7 - Examen: sin validacion de rango de nota
-- **Archivo**: `core/models.py:38` + `core/serializers.py:15-18`
-- **Problema**: `nota` es `DecimalField(max_digits=4, decimal_places=2, null=True, blank=True)` sin validators. No hay validacion en el serializer tampoco. Se pueden crear notas negativas o mayores a 20.
-- **Impacto**: Notas fuera de rango valido.
+### BUG #6 - Materia: sin validacion de creditos_totales ✅ CORREGIDO
+- **Archivo**: `core/serializers.py:12`
+- **Solucion**: Se agrego `min_value=0`.
 
-### BUG #8 - Examen: sin validacion de rango de nota > 20
-- **Archivo**: `core/models.py:38`
-- **Problema**: Parte del BUG #7. No hay constraint de maximo 20 para la nota.
-- **Impacto**: Notas academicamente invalidas.
+### BUG #7/#8 - Examen: sin validacion de rango de nota ✅ CORREGIDO
+- **Archivo**: `core/serializers.py:24-27`
+- **Solucion**: Se agrego validacion custom `validate_nota` con rango 0-20.
 
-### BUG #9 - ExamenSerializer: expone todos los campos sin restriccion
-- **Archivo**: `core/serializers.py:15-18`
-- **Problema**: El serializer usa `fields = '__all__'` sin `read_only_fields`. El campo `materia` es escribible directamente, lo que permite que un usuario envie任意 materia_id sin pasar por la validacion de `perform_create` de manera consistente.
-- **Impacto**: Aunque perform_create valida ownership, el serializer no guia al usuario.
+### BUG #9 - ExamenSerializer: expone todos los campos sin restriccion ✅ CORREGIDO
+- **Archivo**: `core/serializers.py:21`
+- **Solucion**: Se elimino `read_only_fields` (materia es requerido para POST, ownership se valida en perform_create).
 
-### BUG #10 - MateriaViewSet: IsAdminOrDocente + IsOwnerOrReadOnly interactuan incorrectly
-- **Archivo**: `core/views.py:12-13`
-- **Problema**: Para una accion POST/PUT/DELETE, AMBOS permisos deben pasar. `IsAdminOrDocente` permite ADMIN y DOCENTE. `IsOwnerOrReadOnly` permite solo al owner en PUT/DELETE. Resultado: un ADMIN puede crear (POST) materias pero NO puede actualizar/eliminar materias de otros (porque no es owner). Un ADMIN solo puede actualizar/eliminar materias que el mismo creo.
-- **Impacto**: Limitacion inesperada para el rol ADMIN.
+### BUG #10 - ADMIN no puede modificar materias ajenas ✅ CORREGIDO
+- **Archivo**: `users/permissions.py:31-33`
+- **Solucion**: Se agrego bypass para ADMIN en `IsOwnerOrReadOnly`.
