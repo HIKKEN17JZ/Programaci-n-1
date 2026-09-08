@@ -31,7 +31,7 @@ class ExamenViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         materia = serializer.validated_data['materia']
-        if materia.usuario != self.request.user:
+        if materia.usuario != self.request.user and self.request.user.role != 'ADMIN':
             from rest_framework.exceptions import PermissionDenied
             raise PermissionDenied("No puedes crear un examen para una materia que no te pertenece.")
         serializer.save()
