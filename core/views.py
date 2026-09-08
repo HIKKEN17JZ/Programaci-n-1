@@ -1,19 +1,24 @@
 from rest_framework import viewsets, permissions
+from rest_framework.exceptions import PermissionDenied
 from .models import Facultad, Materia, Examen
 from .serializers import FacultadSerializer, MateriaSerializer, ExamenSerializer
-from users.permissions import IsAdminOrDocente, IsOwnerOrReadOnly
+from users.permissions import IsAdminOrDocente, IsAdminOnly, IsOwnerOrReadOnly
 
 class FacultadViewSet(viewsets.ModelViewSet):
     queryset = Facultad.objects.all()
     serializer_class = FacultadSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsAdminOrDocente]
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsAdminOnly]
 
 class MateriaViewSet(viewsets.ModelViewSet):
     serializer_class = MateriaSerializer
     permission_classes = [IsAdminOrDocente, IsOwnerOrReadOnly]
 
     def get_queryset(self):
-        return Materia.objects.all()
+        if not self.request.user.is_authenticated:
+            return Materia.objects.none()
+        if self.request.user.role == 'ADMIN':
+            return Materia.objects.all()
+        return Materia.objects.filter(usuario=self.request.user)
 
     def perform_create(self, serializer):
         serializer.save(usuario=self.request.user)
@@ -23,11 +28,14 @@ class ExamenViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAdminOrDocente, IsOwnerOrReadOnly]
 
     def get_queryset(self):
-        return Examen.objects.all()
+        if not self.request.user.is_authenticated:
+            return Examen.objects.none()
+        if self.request.user.role == 'ADMIN':
+            return Examen.objects.all()
+        return Examen.objects.filter(materia__usuario=self.request.user)
 
     def perform_create(self, serializer):
         materia = serializer.validated_data['materia']
-        if materia.usuario != self.request.user:
-            from rest_framework.exceptions import PermissionDenied
+        if materia.usuario != self.request.user and self.request.user.role != 'ADMIN':
             raise PermissionDenied("No puedes crear un examen para una materia que no te pertenece.")
         serializer.save()
