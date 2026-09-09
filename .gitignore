@@ -1,4 +1,8 @@
 venv/
+.venv/
 __pycache__/
 db.sqlite3
 .env
+docker-compose.yml
+.env.example
+tps/
