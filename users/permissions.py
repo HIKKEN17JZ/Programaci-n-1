@@ -1,40 +1,56 @@
 from rest_framework import permissions
+from users.models import User
 
 class IsAdminOrDocente(permissions.BasePermission):
     """
-    Permite las acciones de escritura (POST, PUT, PATCH, DELETE) solo si el usuario tiene el rol ADMIN o DOCENTE.
+    Permite las acciones de escritura (POST, PUT, PATCH, DELETE) solo si el usuario
+    tiene el rol ADMIN o DOCENTE.
     """
     def has_permission(self, request, view):
         if request.method in permissions.SAFE_METHODS:
             return True
-        return request.user and request.user.is_authenticated and request.user.role in ['ADMIN', 'DOCENTE']
+        user = request.user
+        if not user or not user.is_authenticated:
+            return False
+        return getattr(user, 'role', None) in [User.Role.ADMIN, User.Role.DOCENTE]
+
 
 class IsAdminOnly(permissions.BasePermission):
     """
-    Permite lectura a cualquier usuario, pero solo permite escritura a ADMIN.
+    Permite lectura a cualquier usuario (SAFE_METHODS), pero restringe modificaciones
+    exclusivamente a usuarios con rol ADMIN.
     """
     def has_permission(self, request, view):
         if request.method in permissions.SAFE_METHODS:
             return True
-        return request.user and request.user.is_authenticated and request.user.role == 'ADMIN'
+        user = request.user
+        if not user or not user.is_authenticated:
+            return False
+        return getattr(user, 'role', None) == User.Role.ADMIN or user.is_staff or user.is_superuser
+
 
 class IsOwnerOrReadOnly(permissions.BasePermission):
     """
-    Permite la lectura (GET, HEAD, OPTIONS) a cualquier usuario autenticado, 
-    pero solo permite la modificación (PUT, PATCH, DELETE) si el objeto pertenece al usuario.
-    El rol ADMIN puede modificar cualquier objeto.
+    Permite la lectura a cualquier usuario, pero solo permite modificación
+    (PUT, PATCH, DELETE) si el objeto pertenece al usuario solicitante.
+    El rol ADMIN tiene acceso total (bypass de ownership).
     """
     def has_object_permission(self, request, view, obj):
         if request.method in permissions.SAFE_METHODS:
             return True
-        
-        # ADMIN bypass
-        if request.user.role == 'ADMIN':
+
+        user = request.user
+        if not user or not user.is_authenticated:
+            return False
+
+        # Bypass para administradores
+        if getattr(user, 'role', None) == User.Role.ADMIN or user.is_superuser:
             return True
-        
-        # Check for usuario field directly or via materia
-        user = getattr(obj, 'usuario', None)
-        if user is None and hasattr(obj, 'materia'):
-            user = obj.materia.usuario
-            
-        return user is not None and user == request.user
+
+        # Determinar el propietario del recurso (directo en usuario o anidado en materia)
+        owner = getattr(obj, 'usuario', None)
+        if owner is None and hasattr(obj, 'materia'):
+            owner = obj.materia.usuario
+
+        return owner is not None and owner == user
+

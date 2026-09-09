@@ -13,6 +13,7 @@ class MateriaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Materia
         fields = '__all__'
+        read_only_fields = ['usuario']
 
 class ExamenSerializer(serializers.ModelSerializer):
     class Meta:
