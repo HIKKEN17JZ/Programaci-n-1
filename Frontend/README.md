@@ -18,6 +18,7 @@ Se sirve en **http://localhost:3000** (configurado en `vite.config.js`).
 | `npm run dev`       | Levanta el servidor de desarrollo en el puerto 3000 |
 | `npm run build`     | Compila la app de producción en `dist/`             |
 | `npm run lint`      | Ejecuta ESLint sobre el código                      |
+| `npm test`          | Ejecuta los tests unitarios con el test runner de Node (`node:test`) |
 | `npm run preview`   | Sirve localmente el build generado                  |
 
 ## 🧩 Estructura
@@ -36,6 +37,9 @@ src/
 │   └── AuthContext.jsx    # AuthContext + AuthProvider (users + user; login/register/logout)
 ├── hooks/
 │   └── useAuth.js         # Hook useAuth() — lanza error si se usa fuera de AuthProvider
+├── utils/
+│   ├── progress.js        # Cálculo puro de créditos y semáforo académico
+│   └── progress.test.js   # Pruebas unitarias de funciones de progreso
 ├── data/
 │   └── hardcodedUsers.js  # Usuarios seed: admin/admin123, alumno/1234, docente/docente2024
 └── views/

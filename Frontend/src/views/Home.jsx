@@ -1,15 +1,8 @@
-const SEMAFORO = {
-  critico: { rango: [0, 39], grado: 'Crítico / Inicio', emoji: '🔴', clase: 'text-bg-danger' },
-  enProceso: { rango: [40, 74], grado: 'En Proceso', emoji: '🟡', clase: 'text-bg-warning' },
-  avanzado: { rango: [75, 100], grado: 'Avanzado / Completado', emoji: '🟢', clase: 'text-bg-success' },
-}
-
-function obtenerSemaforo(porcentaje) {
-  const p = Math.max(0, Math.min(100, porcentaje))
-  if (p <= SEMAFORO.critico.rango[1]) return SEMAFORO.critico
-  if (p <= SEMAFORO.enProceso.rango[1]) return SEMAFORO.enProceso
-  return SEMAFORO.avanzado
-}
+import {
+  calcularPorcentaje,
+  obtenerSemaforo,
+  ESTADO_BADGE,
+} from '../utils/progress.js'
 
 const MATERIAS_MOCK = [
   { nombre: 'Análisis Matemático I', creditos: 8, estado: 'Aprobada' },
@@ -24,18 +17,110 @@ const MESAS_MOCK = [
   { materia: 'Programación I', llamado: 'Llamado Marzo', fecha: '18/03/2026', nota: null },
 ]
 
-const ESTADO_BADGE = {
-  Aprobada: 'text-bg-success',
-  Regular: 'text-bg-warning',
-  Cursando: 'text-bg-info',
-  Pendiente: 'text-bg-secondary',
+const AVANCE_MOCK = { creditosObtenidos: 40, creditosTotales: 64 }
+
+function StatCard({ valor, etiqueta }) {
+  return (
+    <div className="col-12 col-md-4 mb-3">
+      <div className="card border-0 shadow-sm h-100">
+        <div className="card-body">
+          <p className="fs-3 fw-bold text-primary mb-0">{valor}</p>
+          <p className="text-secondary mb-0">{etiqueta}</p>
+        </div>
+      </div>
+    </div>
+  )
 }
 
-const avance = { creditosObtenidos: 40, creditosTotales: 64 }
-const porcentaje = Math.round((avance.creditosObtenidos / avance.creditosTotales) * 100)
-const semaforo = obtenerSemaforo(porcentaje)
+function ProgressCard({ obtenidos, totales }) {
+  const porcentaje = calcularPorcentaje(obtenidos, totales)
+  const semaforo = obtenerSemaforo(porcentaje)
+
+  return (
+    <div className="col-12 col-md-4 mb-4">
+      <div className="card border-0 shadow-sm h-100">
+        <div className="card-body d-flex flex-column">
+          <h5 className="card-title">Seguimiento de Progreso</h5>
+          <p className="card-text">
+            {obtenidos} de {totales} créditos
+          </p>
+          <div className="progress mb-3">
+            <div
+              className={`progress-bar ${semaforo.clase}`}
+              role="progressbar"
+              aria-valuenow={porcentaje}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              style={{ width: `${porcentaje}%` }}
+            >
+              {porcentaje}%
+            </div>
+          </div>
+          <span className={`badge ${semaforo.clase} mb-3`}>
+            {semaforo.emoji} {semaforo.grado}
+          </span>
+          <a href="#" className="btn btn-outline-primary btn-sm mt-auto" onClick={(e) => e.preventDefault()}>
+            Ver más
+          </a>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function PlanEstudioCard({ materias }) {
+  return (
+    <div className="col-12 col-md-4 mb-4">
+      <div className="card border-0 shadow-sm h-100">
+        <div className="card-body d-flex flex-column">
+          <h5 className="card-title">Plan de Estudio</h5>
+          <ul className="list-unstyled mb-3">
+            {materias.map((materia) => (
+              <li key={materia.nombre} className="d-flex justify-content-between align-items-center mb-2">
+                <span>{materia.nombre}</span>
+                <span className={`badge ${ESTADO_BADGE[materia.estado] || 'text-bg-secondary'}`}>
+                  {materia.estado}
+                </span>
+              </li>
+            ))}
+          </ul>
+          <a href="#" className="btn btn-outline-primary btn-sm mt-auto" onClick={(e) => e.preventDefault()}>
+            Ver más
+          </a>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function MesasExamenCard({ mesas }) {
+  return (
+    <div className="col-12 col-md-4 mb-4">
+      <div className="card border-0 shadow-sm h-100">
+        <div className="card-body d-flex flex-column">
+          <h5 className="card-title">Mesas de Examen</h5>
+          <ul className="list-unstyled mb-3">
+            {mesas.map((mesa) => (
+              <li key={`${mesa.materia}-${mesa.fecha}`} className="d-flex justify-content-between align-items-center mb-2">
+                <span>{mesa.materia} — {mesa.llamado}</span>
+                <span className={`badge ${mesa.nota === null ? 'text-bg-secondary' : 'text-bg-success'}`}>
+                  {mesa.nota === null ? 'Pendiente' : `Nota ${mesa.nota}`}
+                </span>
+              </li>
+            ))}
+          </ul>
+          <a href="#" className="btn btn-outline-primary btn-sm mt-auto" onClick={(e) => e.preventDefault()}>
+            Ver más
+          </a>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 function Home() {
+  const porcentaje = calcularPorcentaje(AVANCE_MOCK.creditosObtenidos, AVANCE_MOCK.creditosTotales)
+
   return (
     <main className="flex-grow-1">
       <section className="bg-primary text-white text-center py-5">
@@ -48,8 +133,12 @@ function Home() {
             Plan de estudio, mesas de examen y progreso académico en un solo lugar.
           </p>
           <div className="d-flex flex-column flex-sm-row gap-2 justify-content-center">
-            <a href="#" className="btn btn-light btn-lg px-4">Comenzá ahora</a>
-            <a href="#" className="btn btn-outline-light btn-lg px-4">Ver características</a>
+            <a href="#" className="btn btn-light btn-lg px-4" onClick={(e) => e.preventDefault()}>
+              Comenzá ahora
+            </a>
+            <a href="#" className="btn btn-outline-light btn-lg px-4" onClick={(e) => e.preventDefault()}>
+              Ver características
+            </a>
           </div>
         </div>
       </section>
@@ -57,30 +146,9 @@ function Home() {
       <section className="bg-light py-4">
         <div className="container">
           <div className="row text-center">
-            <div className="col-12 col-md-4 mb-3">
-              <div className="card border-0 shadow-sm h-100">
-                <div className="card-body">
-                  <p className="fs-3 fw-bold text-primary mb-0">{MATERIAS_MOCK.length}</p>
-                  <p className="text-secondary mb-0">Materias en tu plan</p>
-                </div>
-              </div>
-            </div>
-            <div className="col-12 col-md-4 mb-3">
-              <div className="card border-0 shadow-sm h-100">
-                <div className="card-body">
-                  <p className="fs-3 fw-bold text-primary mb-0">{MESAS_MOCK.length}</p>
-                  <p className="text-secondary mb-0">Mesas de examen</p>
-                </div>
-              </div>
-            </div>
-            <div className="col-12 col-md-4 mb-3">
-              <div className="card border-0 shadow-sm h-100">
-                <div className="card-body">
-                  <p className="fs-3 fw-bold text-primary mb-0">{porcentaje}%</p>
-                  <p className="text-secondary mb-0">Avance de la carrera</p>
-                </div>
-              </div>
-            </div>
+            <StatCard valor={MATERIAS_MOCK.length} etiqueta="Materias en tu plan" />
+            <StatCard valor={MESAS_MOCK.length} etiqueta="Mesas de examen" />
+            <StatCard valor={`${porcentaje}%`} etiqueta="Avance de la carrera" />
           </div>
         </div>
       </section>
@@ -95,61 +163,12 @@ function Home() {
           </div>
 
           <div className="row">
-            <div className="col-12 col-md-4 mb-4">
-              <div className="card border-0 shadow-sm h-100">
-                <div className="card-body d-flex flex-column">
-                  <h5 className="card-title">Seguimiento de Progreso</h5>
-                  <p className="card-text">
-                    {avance.creditosObtenidos} de {avance.creditosTotales} créditos
-                  </p>
-                  <div className="progress mb-3">
-                    <div className={`progress-bar ${semaforo.clase}`} role="progressbar" aria-valuenow={porcentaje} aria-valuemin={0} aria-valuemax={100} style={{ width: `${porcentaje}%` }}>
-                      {porcentaje}%
-                    </div>
-                  </div>
-                  <span className={`badge ${semaforo.clase} mb-3`}>
-                    {semaforo.emoji} {semaforo.grado}
-                  </span>
-                  <a href="#" className="btn btn-outline-primary btn-sm mt-auto">Ver más</a>
-                </div>
-              </div>
-            </div>
-
-            <div className="col-12 col-md-4 mb-4">
-              <div className="card border-0 shadow-sm h-100">
-                <div className="card-body d-flex flex-column">
-                  <h5 className="card-title">Plan de Estudio</h5>
-                  <ul className="list-unstyled mb-3">
-                    {MATERIAS_MOCK.map((materia) => (
-                      <li key={materia.nombre} className="d-flex justify-content-between align-items-center mb-2">
-                        <span>{materia.nombre}</span>
-                        <span className={`badge ${ESTADO_BADGE[materia.estado]}`}>{materia.estado}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <a href="#" className="btn btn-outline-primary btn-sm mt-auto">Ver más</a>
-                </div>
-              </div>
-            </div>
-
-            <div className="col-12 col-md-4 mb-4">
-              <div className="card border-0 shadow-sm h-100">
-                <div className="card-body d-flex flex-column">
-                  <h5 className="card-title">Mesas de Examen</h5>
-                  <ul className="list-unstyled mb-3">
-                    {MESAS_MOCK.map((mesa) => (
-                      <li key={`${mesa.materia}-${mesa.fecha}`} className="d-flex justify-content-between align-items-center mb-2">
-                        <span>{mesa.materia} — {mesa.llamado}</span>
-                        <span className={`badge ${mesa.nota === null ? 'text-bg-secondary' : 'text-bg-success'}`}>
-                          {mesa.nota === null ? 'Pendiente' : `Nota ${mesa.nota}`}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                  <a href="#" className="btn btn-outline-primary btn-sm mt-auto">Ver más</a>
-                </div>
-              </div>
-            </div>
+            <ProgressCard
+              obtenidos={AVANCE_MOCK.creditosObtenidos}
+              totales={AVANCE_MOCK.creditosTotales}
+            />
+            <PlanEstudioCard materias={MATERIAS_MOCK} />
+            <MesasExamenCard mesas={MESAS_MOCK} />
           </div>
         </div>
       </section>
@@ -158,3 +177,4 @@ function Home() {
 }
 
 export default Home
+
