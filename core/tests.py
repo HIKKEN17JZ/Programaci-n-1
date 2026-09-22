@@ -414,4 +414,48 @@ class TP2ModelAndAPISmokeTestCase(BaseAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
 
+class TP4EdgeCasesTestCase(BaseAPITestCase):
+    """Casos de borde adicionales de la matriz de pruebas TP4 (Clean Code & TDD)."""
+
+    def test_validation_materia_estado_invalido(self):
+        """Intento de crear materia con estado fuera de choices ('XXX') devuelve 400 Bad Request."""
+        self.client.force_authenticate(user=self.docente1)
+        payload = {
+            'nombre': 'Materia Estado Invalido',
+            'año_dictado': 2024,
+            'creditos_totales': 4,
+            'estado': 'XXX'
+        }
+        response = self.client.post('/api/materias/', payload)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('estado', response.data)
+
+    def test_validation_examen_tipo_invalido(self):
+        """Intento de crear examen con tipo fuera de choices ('XXX') devuelve 400 Bad Request."""
+        self.client.force_authenticate(user=self.docente1)
+        payload = {
+            'materia': self.materia_docente1.id,
+            'fecha': '2026-11-10',
+            'nota': 7.0,
+            'tipo': 'XXX'
+        }
+        response = self.client.post('/api/examenes/', payload)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('tipo', response.data)
+
+    def test_validation_materia_nombre_vacio(self):
+        """Intento de crear materia con nombre en blanco devuelve 400 Bad Request."""
+        self.client.force_authenticate(user=self.docente1)
+        payload = {
+            'nombre': '',
+            'año_dictado': 2024,
+            'creditos_totales': 4,
+            'estado': 'CUR'
+        }
+        response = self.client.post('/api/materias/', payload)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('nombre', response.data)
+
+
+
 
