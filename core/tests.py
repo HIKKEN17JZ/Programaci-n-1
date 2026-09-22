@@ -1,3 +1,4 @@
+from django.test import TestCase
 from django.contrib.auth import get_user_model
 from rest_framework.test import APITestCase
 from rest_framework import status
@@ -365,4 +366,31 @@ class ExamenTests(BaseAPITestCase):
         self.client.force_authenticate(user=self.admin_user)
         response = self.client.delete(f'/api/examenes/{self.examen_docente1.id}/')
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+
+class InfrastructureSmokeTestCase(TestCase):
+    """Pruebas de infraestructura y configuración base correspondientes al alcance de TP1."""
+
+    def test_required_apps_installed(self):
+        """Verifica que las aplicaciones fundamentales de TP1 estén registradas."""
+        from django.conf import settings
+        required = {'core', 'rest_framework', 'corsheaders', 'drf_spectacular'}
+        installed = set(settings.INSTALLED_APPS)
+        self.assertTrue(required.issubset(installed), f"Faltan apps requeridas: {required - installed}")
+
+    def test_cors_middleware_order(self):
+        """Verifica que CorsMiddleware esté activo y posicionado antes de CommonMiddleware."""
+        from django.conf import settings
+        middlewares = list(settings.MIDDLEWARE)
+        self.assertIn('corsheaders.middleware.CorsMiddleware', middlewares)
+        self.assertIn('django.middleware.common.CommonMiddleware', middlewares)
+        cors_idx = middlewares.index('corsheaders.middleware.CorsMiddleware')
+        common_idx = middlewares.index('django.middleware.common.CommonMiddleware')
+        self.assertLess(cors_idx, common_idx, "CorsMiddleware debe ubicarse antes de CommonMiddleware")
+
+    def test_admin_panel_accessible(self):
+        """Verifica que el endpoint del panel de administración responda correctamente."""
+        response = self.client.get('/admin/login/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
 
