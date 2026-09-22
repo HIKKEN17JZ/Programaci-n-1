@@ -132,3 +132,23 @@ class UserAuthenticationTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('email', response.data)
 
+    def test_user_model_str_and_role_properties(self):
+        """Verifica métodos __str__ y propiedades semánticas de roles en User (Clean Code)."""
+        self.assertEqual(str(self.docente), "docente_user (Docente)")
+        self.assertEqual(str(self.estudiante), "alumno_user (Estudiante)")
+        self.assertTrue(self.docente.is_docente)
+        self.assertFalse(self.docente.is_estudiante)
+        self.assertTrue(self.estudiante.is_estudiante)
+        self.assertFalse(self.estudiante.is_docente)
+
+    def test_register_user_missing_email(self):
+        """Intento de registro sin email es rechazado con 400 Bad Request."""
+        payload = {
+            'username': 'sin_email_user',
+            'password': 'Password123!'
+        }
+        response = self.client.post('/api/users/register/', payload)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('email', response.data)
+
+
