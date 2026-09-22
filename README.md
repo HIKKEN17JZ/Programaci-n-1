@@ -26,10 +26,10 @@ El repositorio reúne de forma progresiva las metas establecidas a lo largo de l
 | **TP 2** | Modelado de datos y CRUD | Modelos `Facultad`, `Materia`, `Examen`, integración con PostgreSQL, ViewSets, enrutamiento, pruebas de contrato de entidades y documentación Swagger UI vía `drf-spectacular`. |
 | **TP 3** | Seguridad e Identidad | App `users`, modelo personalizado `User` (`AbstractUser`), roles (`ADMIN`, `DOCENTE`, `ESTUDIANTE`), autenticación JWT (`/api/token/`, `/api/token/refresh/`), lista negra de tokens, propiedades semánticas y permisos personalizados. |
 | **TP 4** | Validación de API y Casos de Borde | Matriz de 61 pruebas, validaciones de rango (notas 0-20, año 1900-2100, créditos $\ge$ 0), casos de borde de modelos, aislamiento de datos por usuario, bypass administrativo y resolución de 10 bugs mediante pull requests. |
-| **TP 5** | Inicio del Frontend React | Inicialización del cliente web SPA en `Frontend/` utilizando Vite y React 19, configuración de scripts y estructura base de componentes. |
+| **TP 5** | Inicio del Frontend React | Inicialización del cliente web SPA en `Frontend/` con Vite y React 19 en puerto 3000, scripts npm, arquitectura monorepo y diseño inicial de Home. |
 | **TP 6** | Maquetado Responsive (Bootstrap) | Interfaz completa de Home: Hero section, tarjetas de métricas, monitor de avance con semáforo por créditos, plan de estudio, mesas de examen, Navbar colapsable y Footer accesible. |
 | **TP 7** | Sistema Auth en Frontend | Contexto global de autenticación (`AuthContext` + `useAuth`), rutas protegidas (`ProtectedRoute`), vistas completas de `Login` y `Register` con validaciones y alertas, y flujo de cierre de sesión (`Logout`). |
-| **Rama `detalles`** | **Clean Code & TDD Integral** | Reanálisis y refactorización integral: 51 tests automatizados en Django (incluyendo smoke tests de TP1, contratos de entidades/OpenAPI de TP2, validaciones de TP3 y casos de borde de TP4), 9 tests unitarios en Frontend (`node:test`), modularización de cálculos en `progress.js`, corrección de asignación de autoría en serializadores (`read_only_fields = ['usuario']`), validación de email duplicado y código libre de advertencias. |
+| **Rama `detalles`** | **Clean Code & TDD Integral** | Reanálisis y refactorización integral: 51 tests automatizados en Django (incluyendo smoke tests de TP1, contratos de entidades/OpenAPI de TP2, validaciones de TP3 y casos de borde de TP4), 11 tests unitarios en Frontend (`node:test`), modularización de cálculos en `progress.js`, corrección de asignación de autoría en serializadores (`read_only_fields = ['usuario']`), validación de email duplicado y código libre de advertencias. |
 
 ---
 
@@ -165,7 +165,7 @@ python manage.py test --settings=Gestor.test_settings -v 2
 - Control estricto de permisos RBAC para facultades, materias y exámenes con bypass administrativo verificado.
 
 ### 2. Pruebas de Frontend (Node.js Native Test Runner)
-Ejecuta 9 pruebas unitarias sin dependencias externas pesadas:
+Ejecuta 11 pruebas unitarias sin dependencias externas pesadas:
 ```bash
 npm --prefix Frontend test
 ```
@@ -173,6 +173,7 @@ npm --prefix Frontend test
 - Redondeo y cálculo de porcentaje de créditos.
 - Manejo de bordes: división por cero, créditos negativos, valores no numéricos o `NaN`.
 - Clasificación estricta de rangos de semáforo (0, 39, 40, 74, 75, 100).
+- Normalización bidireccional de estados de cursada (`APR`, `REG`, `CUR`, `PEN`, `REC`) y badges semánticos de Bootstrap.
 
 ---
 

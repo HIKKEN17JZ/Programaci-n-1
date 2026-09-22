@@ -4,6 +4,8 @@ import {
   calcularPorcentaje,
   obtenerSemaforo,
   SEMAFORO,
+  ESTADO_BADGE,
+  obtenerEtiquetaEstado,
 } from './progress.js'
 
 describe('Utilidades de Progreso Académico', () => {
@@ -73,4 +75,26 @@ describe('Utilidades de Progreso Académico', () => {
       assert.strictEqual(obtenerSemaforo(150).grado, SEMAFORO.avanzado.grado)
     })
   })
+
+  describe('ESTADO_BADGE y obtenerEtiquetaEstado', () => {
+    it('mapea correctamente códigos de estado de backend a etiquetas legibles', () => {
+      assert.strictEqual(obtenerEtiquetaEstado('APR'), 'Aprobada')
+      assert.strictEqual(obtenerEtiquetaEstado('REG'), 'Regular')
+      assert.strictEqual(obtenerEtiquetaEstado('CUR'), 'Cursando')
+      assert.strictEqual(obtenerEtiquetaEstado('PEN'), 'Pendiente')
+      assert.strictEqual(obtenerEtiquetaEstado('REC'), 'Recursando')
+      assert.strictEqual(obtenerEtiquetaEstado('Aprobada'), 'Aprobada')
+      assert.strictEqual(obtenerEtiquetaEstado(null), 'Pendiente')
+    })
+
+    it('asigna clases Bootstrap consistentes a los estados de cursada', () => {
+      assert.strictEqual(ESTADO_BADGE.APR, 'text-bg-success')
+      assert.strictEqual(ESTADO_BADGE.Aprobada, 'text-bg-success')
+      assert.strictEqual(ESTADO_BADGE.REG, 'text-bg-warning')
+      assert.strictEqual(ESTADO_BADGE.CUR, 'text-bg-info')
+      assert.strictEqual(ESTADO_BADGE.REC, 'text-bg-danger')
+      assert.strictEqual(ESTADO_BADGE.Recursando, 'text-bg-danger')
+    })
+  })
 })
+

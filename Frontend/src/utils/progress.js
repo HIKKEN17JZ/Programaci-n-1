@@ -28,6 +28,30 @@ export const ESTADO_BADGE = {
   Regular: 'text-bg-warning',
   Cursando: 'text-bg-info',
   Pendiente: 'text-bg-secondary',
+  Recursando: 'text-bg-danger',
+  APR: 'text-bg-success',
+  REG: 'text-bg-warning',
+  CUR: 'text-bg-info',
+  PEN: 'text-bg-secondary',
+  REC: 'text-bg-danger',
+}
+
+export const ESTADO_LABEL = {
+  APR: 'Aprobada',
+  REG: 'Regular',
+  CUR: 'Cursando',
+  PEN: 'Pendiente',
+  REC: 'Recursando',
+}
+
+/**
+ * Normaliza y devuelve la etiqueta legible para un estado de materia.
+ *
+ * @param {string} estado - Código o texto de estado.
+ * @returns {string} Etiqueta descriptiva en español.
+ */
+export function obtenerEtiquetaEstado(estado) {
+  return ESTADO_LABEL[estado] || estado || 'Pendiente'
 }
 
 /**

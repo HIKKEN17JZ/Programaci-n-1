@@ -2,6 +2,7 @@ import {
   calcularPorcentaje,
   obtenerSemaforo,
   ESTADO_BADGE,
+  obtenerEtiquetaEstado,
 } from '../utils/progress.js'
 
 const MATERIAS_MOCK = [
@@ -79,7 +80,7 @@ function PlanEstudioCard({ materias }) {
               <li key={materia.nombre} className="d-flex justify-content-between align-items-center mb-2">
                 <span>{materia.nombre}</span>
                 <span className={`badge ${ESTADO_BADGE[materia.estado] || 'text-bg-secondary'}`}>
-                  {materia.estado}
+                  {obtenerEtiquetaEstado(materia.estado)}
                 </span>
               </li>
             ))}
