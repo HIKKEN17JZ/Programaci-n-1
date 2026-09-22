@@ -23,13 +23,13 @@ El repositorio reúne de forma progresiva las metas establecidas a lo largo de l
 | Trabajo Práctico | Enfoque Principal | Entregables y Logros |
 | :--- | :--- | :--- |
 | **TP 1** | Puesta en marcha Backend | Entorno virtual, configuración base de Django y Django REST Framework, middleware CORS, smoke tests de infraestructura y superusuario. |
-| **TP 2** | Modelado de datos y CRUD | Modelos `Facultad`, `Materia`, `Examen`, integración con PostgreSQL, ViewSets, enrutamiento y documentación Swagger UI vía `drf-spectacular`. |
+| **TP 2** | Modelado de datos y CRUD | Modelos `Facultad`, `Materia`, `Examen`, integración con PostgreSQL, ViewSets, enrutamiento, pruebas de contrato de entidades y documentación Swagger UI vía `drf-spectacular`. |
 | **TP 3** | Seguridad e Identidad | App `users`, modelo personalizado `User` (`AbstractUser`), roles (`ADMIN`, `DOCENTE`, `ESTUDIANTE`), autenticación JWT (`/api/token/`, `/api/token/refresh/`), lista negra de tokens y permisos personalizados. |
 | **TP 4** | Validación de API y Casos de Borde | Matriz de 61 pruebas, validaciones de rango (notas 0-20, año 1900-2100, créditos $\ge$ 0), aislamiento de datos por usuario, bypass administrativo y resolución de bugs mediante pull requests. |
 | **TP 5** | Inicio del Frontend React | Inicialización del cliente web SPA en `Frontend/` utilizando Vite y React 19, configuración de scripts y estructura base de componentes. |
 | **TP 6** | Maquetado Responsive (Bootstrap) | Interfaz completa de Home: Hero section, tarjetas de métricas, monitor de avance con semáforo por créditos, plan de estudio, mesas de examen, Navbar colapsable y Footer accesible. |
 | **TP 7** | Sistema Auth en Frontend | Contexto global de autenticación (`AuthContext` + `useAuth`), rutas protegidas (`ProtectedRoute`), vistas completas de `Login` y `Register` con validaciones y alertas, y flujo de cierre de sesión (`Logout`). |
-| **Rama `detalles`** | **Clean Code & TDD Integral** | Reanálisis y refactorización integral: 43 tests automatizados en Django (incluyendo smoke tests de infraestructura TP1), 9 tests unitarios en Frontend (`node:test`), modularización de cálculos en `progress.js`, corrección de asignación de autoría en serializadores (`read_only_fields = ['usuario']`), validación de email duplicado y código libre de advertencias. |
+| **Rama `detalles`** | **Clean Code & TDD Integral** | Reanálisis y refactorización integral: 46 tests automatizados en Django (incluyendo smoke tests de TP1 y contratos de entidades/OpenAPI de TP2), 9 tests unitarios en Frontend (`node:test`), modularización de cálculos en `progress.js`, corrección de asignación de autoría en serializadores (`read_only_fields = ['usuario']`), validación de email duplicado y código libre de advertencias. |
 
 ---
 
@@ -152,12 +152,13 @@ El cliente web se encuentra en el directorio [`Frontend/`](file:///home/alejrz/p
 El proyecto cuenta con suites de prueba automatizadas tanto en el backend como en el frontend, diseñadas bajo el ciclo **Red → Green → Refactor**:
 
 ### 1. Pruebas de Backend (Django Test Suite)
-Ejecuta 43 pruebas de integración, comportamiento e infraestructura utilizando base de datos en memoria (`sqlite3`):
+Ejecuta 46 pruebas de integración, comportamiento, infraestructura y contratos de API utilizando base de datos en memoria (`sqlite3`):
 ```bash
 python manage.py test --settings=Gestor.test_settings -v 2
 ```
 **Casos cubiertos:**
 - **Infraestructura y Configuración Base (TP1)**: Verificación de `INSTALLED_APPS`, orden y prioridad de `CorsMiddleware` y disponibilidad del panel administrativo (`/admin/login/`).
+- **Modelado de Datos y OpenAPI (TP2)**: Representación semántica de entidades (`__str__` en `Facultad`, `Materia`, `Examen`) y disponibilidad pública de Swagger UI (`/api/docs/`) y esquema OpenAPI (`/api/schema/`).
 - Autenticación JWT (login exitoso, credenciales inválidas, refresh de token).
 - Registro de usuarios con validación de unicidad de correo y username.
 - Aislamiento multi-inquilino por usuario en consultas GET de materias y exámenes.

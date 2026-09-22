@@ -394,3 +394,24 @@ class InfrastructureSmokeTestCase(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
 
+class TP2ModelAndAPISmokeTestCase(BaseAPITestCase):
+    """Pruebas de modelado de datos, representación de entidades y documentación OpenAPI (TP2)."""
+
+    def test_model_str_representations(self):
+        """Verifica que los métodos __str__ de los modelos principales sean legibles y semánticos."""
+        self.assertEqual(str(self.facultad), "Facultad de Ingeniería")
+        self.assertEqual(str(self.materia_docente1), f"Programación I ({self.docente1.username})")
+        self.assertIn("PAR - Programación I - Nota: 8.5", str(self.examen_docente1))
+
+    def test_openapi_schema_endpoint_accessible(self):
+        """Verifica que el endpoint de esquema OpenAPI (/api/schema/) responda HTTP 200."""
+        response = self.client.get('/api/schema/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_swagger_ui_endpoint_accessible(self):
+        """Verifica que la interfaz interactiva de Swagger UI (/api/docs/) responda HTTP 200."""
+        response = self.client.get('/api/docs/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+
+
