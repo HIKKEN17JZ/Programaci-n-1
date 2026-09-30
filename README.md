@@ -29,7 +29,7 @@ El repositorio reúne de forma progresiva las metas establecidas a lo largo de l
 | **TP 5** | Inicio del Frontend React | Inicialización del cliente web SPA en `Frontend/` con Vite y React 19 en puerto 3000, scripts npm, arquitectura monorepo y diseño inicial de Home. |
 | **TP 6** | Maquetado Responsive (Bootstrap) | Interfaz completa de Home modularizada: Hero section, tarjetas de métricas (`StatCard`), monitor de avance (`ProgressCard`), plan de estudio (`PlanEstudioCard`), mesas de examen (`MesasExamenCard`), Navbar colapsable con logo e isotipo SVG y Footer accesible libre de desbordes. |
 | **TP 7** | Sistema Auth en Frontend | Contexto global de autenticación (`AuthContext` + `useAuth`), rutas protegidas (`ProtectedRoute`), vistas completas de `Login` y `Register` con validaciones y alertas, y flujo de cierre de sesión (`Logout`). |
-| **Rama `detalles`** | **Clean Code & TDD Integral** | Reanálisis y refactorización integral: 51 tests automatizados en Django (incluyendo smoke tests de TP1, contratos de entidades/OpenAPI de TP2, validaciones de TP3 y casos de borde de TP4), 11 tests unitarios en Frontend (`node:test`), modularización de cálculos en `progress.js`, corrección de asignación de autoría en serializadores (`read_only_fields = ['usuario']`), validación de email duplicado y código libre de advertencias. |
+| **Rama `detalles`** | **Clean Code & TDD Integral** | Reanálisis y refactorización integral: 51 tests automatizados en Django (incluyendo smoke tests de TP1, contratos de entidades/OpenAPI de TP2, validaciones de TP3 y casos de borde de TP4), 25 tests unitarios en Frontend (`node:test`), modularización de cálculos en `progress.js`, lógica pura de validación en `auth.js`, corrección de asignación de autoría en serializadores (`read_only_fields = ['usuario']`), validación de email duplicado y código libre de advertencias. |
 
 ---
 
@@ -165,15 +165,22 @@ python manage.py test --settings=Gestor.test_settings -v 2
 - Control estricto de permisos RBAC para facultades, materias y exámenes con bypass administrativo verificado.
 
 ### 2. Pruebas de Frontend (Node.js Native Test Runner)
-Ejecuta 11 pruebas unitarias sin dependencias externas pesadas:
+Ejecuta 25 pruebas unitarias sin dependencias externas pesadas:
 ```bash
 npm --prefix Frontend test
 ```
 **Casos cubiertos:**
-- Redondeo y cálculo de porcentaje de créditos.
-- Manejo de bordes: división por cero, créditos negativos, valores no numéricos o `NaN`.
-- Clasificación estricta de rangos de semáforo (0, 39, 40, 74, 75, 100).
-- Normalización bidireccional de estados de cursada (`APR`, `REG`, `CUR`, `PEN`, `REC`) y badges semánticos de Bootstrap.
+- **Progreso Académico y Semáforo (11 tests)**:
+  - Redondeo y cálculo de porcentaje de créditos.
+  - Manejo de bordes: división por cero, créditos negativos, valores no numéricos o `NaN`.
+  - Clasificación estricta de rangos de semáforo (0, 39, 40, 74, 75, 100).
+  - Normalización bidireccional de estados de cursada (`APR`, `REG`, `CUR`, `PEN`, `REC`) y badges semánticos de Bootstrap.
+- **Autenticación y Validación en Memoria TP7 (14 tests)**:
+  - Validación de formato regex de email y rechazo de cadenas inválidas/nulas.
+  - Autenticación con credenciales válidas, insensibilidad a mayúsculas/espacios y no exposición de contraseñas.
+  - Rechazo de contraseñas incorrectas o usuarios inexistentes con mensajes de error descriptivos.
+  - Validación integral de registro: longitud mínima de contraseña (4 caracteres), unicidad de usuario y unicidad de correo electrónico.
+  - Creación y normalización de usuarios con rol `estudiante`.
 
 ---
 

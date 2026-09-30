@@ -41,6 +41,8 @@ src/
 ├── hooks/
 │   └── useAuth.js         # Hook useAuth() — lanza error si se usa fuera de AuthProvider
 ├── utils/
+│   ├── auth.js            # Lógica pura de validación, registro y autenticación
+│   ├── auth.test.js       # Pruebas unitarias de autenticación y validación (14 tests)
 │   ├── progress.js        # Cálculo puro de créditos y semáforo académico
 │   └── progress.test.js   # Pruebas unitarias de funciones de progreso (11 tests)
 ├── data/
