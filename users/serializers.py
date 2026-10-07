@@ -8,6 +8,7 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ['id', 'username', 'email', 'role', 'facultad', 'plan_estudio_nombre']
 
 class RegisterSerializer(serializers.ModelSerializer):
+    email = serializers.EmailField(required=True)
     facultad_id = serializers.PrimaryKeyRelatedField(
         queryset=Facultad.objects.all(),
         source='facultad',
@@ -20,6 +21,13 @@ class RegisterSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'password': {'write_only': True}
         }
+
+    def validate_email(self, value):
+        if not value:
+            raise serializers.ValidationError("El correo electrónico es obligatorio.")
+        if User.objects.filter(email__iexact=value.strip()).exists():
+            raise serializers.ValidationError("Este correo electrónico ya está registrado.")
+        return value.strip().lower()
 
     def create(self, validated_data):
         user = User.objects.create_user(

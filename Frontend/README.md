@@ -18,6 +18,7 @@ Se sirve en **http://localhost:3000** (configurado en `vite.config.js`).
 | `npm run dev`       | Levanta el servidor de desarrollo en el puerto 3000 |
 | `npm run build`     | Compila la app de producción en `dist/`             |
 | `npm run lint`      | Ejecuta ESLint sobre el código                      |
+| `npm test`          | Ejecuta los tests unitarios con el test runner de Node (`node:test`) |
 | `npm run preview`   | Sirve localmente el build generado                  |
 
 ## 🧩 Estructura
@@ -26,22 +27,31 @@ Se sirve en **http://localhost:3000** (configurado en `vite.config.js`).
 src/
 ├── main.jsx               # Punto de entrada (Bootstrap + estilos + app > AuthProvider > BrowserRouter)
 ├── App.jsx                # Router con Routes: /login, /register, / (ProtectedRoute)
-├── index.css              # Variables del tema (color primario terracota)
+├── index.css              # Variables del tema (color primario terracota) y scroll fluido
 ├── components/
-│   ├── Navbar.jsx         # Barra condicional: sesión > "Hola {username} / Cerrar sesión"
-│   │                     #                      > no sesión > links Login/Register
-│   ├── Footer.jsx         # Pie de página con secciones y contacto
+│   ├── Navbar.jsx         # Barra condicional con isotipo SVG y navegación fluida
+│   ├── Footer.jsx         # Pie de página responsive libre de desbordes
+│   ├── StatCard.jsx       # Tarjeta de métricas con sombra, hover y scroll accesible
+│   ├── ProgressCard.jsx   # Monitor de créditos y semáforo visual
+│   ├── PlanEstudioCard.jsx# Listado de asignaturas con badges de estado
+│   ├── MesasExamenCard.jsx# Fechas de examen, llamados y actas de notas
 │   └── ProtectedRoute.jsx # Guard: si no hay user redirige a /login con state from
 ├── contexts/
 │   └── AuthContext.jsx    # AuthContext + AuthProvider (users + user; login/register/logout)
 ├── hooks/
 │   └── useAuth.js         # Hook useAuth() — lanza error si se usa fuera de AuthProvider
+├── utils/
+│   ├── auth.js            # Lógica pura de validación, registro y autenticación
+│   ├── auth.test.js       # Pruebas unitarias de autenticación y validación (14 tests)
+│   ├── progress.js        # Cálculo puro de créditos y semáforo académico
+│   └── progress.test.js   # Pruebas unitarias de funciones de progreso (11 tests)
 ├── data/
-│   └── hardcodedUsers.js  # Usuarios seed: admin/admin123, alumno/1234, docente/docente2024
+│   ├── hardcodedUsers.js  # Usuarios seed: admin/admin123, alumno/1234
+│   └── academicMock.js    # Datos mock: materias, mesas y avance académico
 └── views/
-    ├── Home.jsx           # Vista principal (TP6) con secciones y MOCKs
-    ├── Login.jsx          # Card Bootstrap; login; error genérico; redirect from state
-    └── Register.jsx       # Card Bootstrap; register; redirect a /login con mensaje éxito
+    ├── Home.jsx           # Vista principal modularizada (TP6)
+    ├── Login.jsx          # Card Bootstrap con padding móvil; login y redirección
+    └── Register.jsx       # Card Bootstrap con padding móvil; register y redirección
 ```
 
 ## 🎨 Tema

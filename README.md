@@ -1,126 +1,270 @@
-# Proyecto: Plataforma de Gestión de Carrera e Historial Académico
+# Plataforma de Gestión de Carrera e Historial Académico
 
-## 📝 Descripción
-Diseñada para que estudiantes universitarios puedan centralizar la gestión de su trayectoria académica de manera dinámica y eficiente. Permite cargar el plan de estudio completo, realizar el seguimiento de las cursadas (promociones, regularidades) y administrar las mesas de examen final, incluyendo el registro histórico de intentos y calificaciones.
-
-La idea principal es que el sistema no sea solo una lista de materias, sino un monitor de progreso que permita:
-* Visualizar qué materias faltan para el título.
-* Diferenciar entre cursada aprobada y examen final pendiente.
-* Gestionar las fechas de mesas de examen y la cantidad de intentos por materia.
-* Centralizar la información según la facultad del estudiante.
+Sistema integral para la administración, seguimiento y planificación de la trayectoria académica de estudiantes universitarios. Permite centralizar el plan de estudios, registrar el estado de cursada por materia, administrar mesas de examen final e historial de calificaciones, y visualizar el progreso general de la carrera mediante indicadores dinámicos y lógica de semáforo.
 
 ---
 
 ## 🎯 Objetivos del Proyecto
 
-### Objetivo General
-Desarrollar una plataforma web para la administración integral del progreso académico y la planificación de exámenes.
-
-### Objetivos Específicos
-* Implementar registro e inicio de sesión de estudiantes.
-* Permitir la carga y edición del plan de estudio personal.
-* Gestionar el estado de cada materia (Cursando, Regular, Aprobada, Libre).
-* Registrar fechas de exámenes finales y sus resultados (notas, condición).
-* Integrar una entidad institucional (Facultad) para la validez de los datos.
+- **Objetivo General**: Desarrollar una solución web modular (Backend RESTful + Frontend SPA) para gestionar el progreso académico, calificaciones y mesas de examen con control de acceso por roles e integridad de datos.
+- **Objetivos Específicos**:
+  - Implementar autenticación y autorización segura con JWT (JSON Web Tokens) y control de acceso basado en roles (RBAC).
+  - Proveer endpoints CRUD con aislamiento estricto de recursos por usuario y permisos diferenciados (`ADMIN`, `DOCENTE`, `ESTUDIANTE`).
+  - Validar reglas de negocio críticas a nivel de serializadores y modelos (rango de notas 0-20, años lectivos válidos, créditos positivos, unicidad de cuentas).
+  - Desarrollar una interfaz de usuario interactiva y responsive con React 19, Vite y Bootstrap 5.3.
+  - Garantizar calidad del software mediante **TDD (Test-Driven Development)** y principios de **Clean Code**.
 
 ---
 
-## 🌐 Alcance del Sistema
+## 🧭 Evolución y Alcance por Trabajos Prácticos
 
-### Gestión de Usuarios e Institución
-* **Autenticación**: Registro, inicio y cierre de sesión seguro.
-* **Vinculación Institucional**: Posibilidad de asociar el perfil a una Facultad específica o mantenerlo como Personal.
+El repositorio reúne de forma progresiva las metas establecidas a lo largo de la cursada:
 
-### Administración del Plan de Estudio
-* **Carga de Materias**: Registro de asignaturas incluyendo nombre y carga de créditos/horas.
-* **Control de Créditos**: Sumatoria automática de créditos obtenidos por materia aprobada y contador de créditos necesarios por año académico.
-* **Seguimiento de Estados**: Visualización del estado individual (Pendiente, Cursando, Regular, Aprobada) y estado general del año lectivo.
-
-### Gestión de Exámenes y Calificaciones
-* **Historial de Notas**: Registro de calificaciones de cursada y promociones.
-* **Módulo de Finales**: Gestión de mesas de examen, fechas de llamado y contador de intentos.
-
-### Visualización de Progreso (Dashboard)
-* **Monitor de Carrera**: Visualización del año actual con una barra de progreso dinámica.
-* **Lógica de Semáforo**: 
-    * 🔴 Crítico/Inicio: (0% - 39%)
-    * 🟡 En Proceso: (40% - 74%)
-    * 🟢 Avanzado/Completado: (75% - 100%)
+| Trabajo Práctico | Enfoque Principal | Entregables y Logros |
+| :--- | :--- | :--- |
+| **TP 1** | Puesta en marcha Backend | Entorno virtual, configuración base de Django y Django REST Framework, middleware CORS, smoke tests de infraestructura y superusuario. |
+| **TP 2** | Modelado de datos y CRUD | Modelos `Facultad`, `Materia`, `Examen`, integración con PostgreSQL, ViewSets, enrutamiento, pruebas de contrato de entidades y documentación Swagger UI vía `drf-spectacular`. |
+| **TP 3** | Seguridad e Identidad | App `users`, modelo personalizado `User` (`AbstractUser`), roles (`ADMIN`, `DOCENTE`, `ESTUDIANTE`), autenticación JWT (`/api/token/`, `/api/token/refresh/`), lista negra de tokens, propiedades semánticas y permisos personalizados. |
+| **TP 4** | Validación de API y Casos de Borde | Matriz de 61 pruebas, validaciones de rango (notas 0-20, año 1900-2100, créditos $\ge$ 0), casos de borde de modelos, aislamiento de datos por usuario, bypass administrativo y resolución de 10 bugs mediante pull requests. |
+| **TP 5** | Inicio del Frontend React | Inicialización del cliente web SPA en `Frontend/` con Vite y React 19 en puerto 3000, scripts npm, arquitectura monorepo y diseño inicial de Home. |
+| **TP 6** | Maquetado Responsive (Bootstrap) | Interfaz completa de Home modularizada: Hero section, tarjetas de métricas (`StatCard`), monitor de avance (`ProgressCard`), plan de estudio (`PlanEstudioCard`), mesas de examen (`MesasExamenCard`), Navbar colapsable con logo e isotipo SVG y Footer accesible libre de desbordes. |
+| **TP 7** | Sistema Auth en Frontend | Contexto global de autenticación (`AuthContext` + `useAuth`), rutas protegidas (`ProtectedRoute`), vistas completas de `Login` y `Register` con validaciones y alertas, y flujo de cierre de sesión (`Logout`). |
+| **Rama `detalles`** | **Clean Code & TDD Integral** | Reanálisis y refactorización integral: 51 tests automatizados en Django (incluyendo smoke tests de TP1, contratos de entidades/OpenAPI de TP2, validaciones de TP3 y casos de borde de TP4), 25 tests unitarios en Frontend (`node:test`), modularización de cálculos en `progress.js`, lógica pura de validación en `auth.js`, corrección de asignación de autoría en serializadores (`read_only_fields = ['usuario']`), validación de email duplicado y código libre de advertencias. |
 
 ---
 
-## 🛠️ Implementación Técnica (TP 2)
+## 🏗️ Arquitectura del Sistema
 
-El proyecto ha evolucionado de una fase conceptual a una implementación real de Backend utilizando el siguiente stack:
+El proyecto está diseñado como un monorepositorio que separa claramente las responsabilidades del servidor API y del cliente web:
 
-- **Framework**: Django 6.0.3
-- **API Framework**: Django REST Framework 3.17.1
-- **Base de Datos**: PostgreSQL (Migrado desde SQLite para mayor robustez).
-- **Documentación**: drf-spectacular (Swagger UI accesible en `/api/docs/`).
-- **CORS**: `django-cors-headers` configurado para frontend.
-
-### 🚀 Estado Actual del Desarrollo
-Se han implementado los siguientes módulos funcionales:
-1. **Modelado de Datos**: Entidades `Facultad`, `User` (custom), `Materia` y `Examen` plenamente operativas.
-2. **API REST (CRUD)**: Endpoints funcionales para la gestión de todas las entidades.
-3. **Panel de Administración**: Configurado el `django-admin` para gestión visual de datos.
-4. **Migraciones**: Estructura de base de datos desplegada en PostgreSQL.
+```
+Programaci-n-1/
+├── Gestor/               # Configuración global del proyecto Django (settings, urls, asgi, wsgi)
+├── core/                 # App académica: modelos Facultad, Materia, Examen, endpoints CRUD y tests
+├── users/                # App de identidad: modelo User personalizado, serializadores, permisos RBAC y tests
+├── docs/                 # Matriz de pruebas de TP4 y colección de Postman
+├── Frontend/             # Cliente Single Page Application (SPA)
+│   ├── src/
+│   │   ├── components/   # Componentes reutilizables (Navbar, Footer, StatCard, ProgressCard, PlanEstudioCard, MesasExamenCard, ProtectedRoute)
+│   │   ├── contexts/     # Context API para estado de autenticación (AuthContext)
+│   │   ├── data/         # Mock data inicial para desarrollo
+│   │   ├── hooks/        # Custom hooks (useAuth)
+│   │   ├── utils/        # Utilidades puras testeadas (progress.js)
+│   │   └── views/        # Vistas de la aplicación (Home, Login, Register)
+│   └── package.json      # Dependencias y scripts de Node.js
+└── requirements.txt      # Dependencias de Python
+```
 
 ---
 
 ## 📐 Modelo de Datos y Relaciones
 
-### Entidades Principales
-- **Facultad**: `id`, `nombre`, `sede`.
-- **Usuario**: `id`, `facultad_id` (FK), `username`, `email`, `plan_estudio_nombre`.
-- **Materia**: `id`, `usuario_id` (FK), `nombre`, `año_dictado`, `creditos_totales`, `estado`, `es_promocionable`.
-- **Examen**: `id`, `materia_id` (FK), `fecha`, `nota`, `tipo`.
-
-### Reglas de Integridad
-* **ON DELETE CASCADE**: Al eliminar un usuario, se eliminan sus materias y exámenes asociados.
-* **Relación Unidireccional**: El flujo de datos es descendente desde la Institución $\rightarrow$ Usuario $\rightarrow$ Materia $\rightarrow$ Examen.
-
-### Diagrama de Relaciones
 ```mermaid
-graph TD
-    F[Facultad] -- 1:N --> U[User]
-    U -- 1:N --> M[Materia]
-    M -- 1:N --> E[Examen]
+erDiagram
+    FACULTAD ||--o{ USER : "pertenece a"
+    USER ||--o{ MATERIA : "administra"
+    MATERIA ||--o{ EXAMEN : "registra"
+
+    FACULTAD {
+        int id PK
+        string nombre
+        string sede
+    }
+
+    USER {
+        int id PK
+        string username UK
+        string email
+        string password
+        string role "ADMIN | DOCENTE | ESTUDIANTE"
+        int facultad_id FK
+        string plan_estudio_nombre
+    }
+
+    MATERIA {
+        int id PK
+        int usuario_id FK
+        string nombre
+        int anio_dictado "1900 - 2100"
+        int creditos_totales ">= 0"
+        string estado "PEN | CUR | REG | APR | REC"
+        boolean es_promocionable
+    }
+
+    EXAMEN {
+        int id PK
+        int materia_id FK
+        date fecha
+        decimal nota "0.00 - 20.00 (opcional)"
+        string tipo "PAR | FIN | PRO"
+    }
 ```
 
----
-
-## 🎨 Frontend 
-
-El cliente web se implementa con **React + Vite** y vive en el directorio `Frontend/`.
-
-- **Levantar la app**: `npm run dev` (desde `Frontend/`), se sirve en el puerto **3000**.
-- **Diseño de la Home**: ver [`Frontend/docs/diseno-home.md`](Frontend/docs/diseno-home.md) con el diagrama de navegación de la vista principal.
+### Reglas de Integridad y Lógica de Negocio
+1. **Cascada (`CASCADE`)**: La eliminación de un usuario remueve sus materias y exámenes dependientes.
+2. **Aislamiento de Recursos**: Los estudiantes y docentes solo pueden consultar y operar sobre sus propias materias y exámenes asociados.
+3. **Bypass Administrativo**: El rol `ADMIN` posee visibilidad global y permisos de modificación/eliminación sobre cualquier recurso académico.
+4. **Protección de Facultades**: La lectura de facultades es pública; su alta, baja y modificación está reservada al administrador (`IsAdminOnly`).
 
 ---
 
-## ⚙️ Configuración Local
+## 🔌 Endpoints de la API REST
 
-### Requisitos
-- Python 3.13+
-- PostgreSQL instalado y corriendo.
+Documentación interactiva disponible en Swagger UI: `http://localhost:8000/api/docs/`
 
-### Pasos de Instalación
-1. **Entorno Virtual**:
+| Método | Endpoint | Rol Requerido | Descripción |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/api/token/` | Público | Obtiene par de tokens JWT (`access` y `refresh`). |
+| `POST` | `/api/token/refresh/` | Público | Renueva el token de acceso mediante el token de actualización. |
+| `POST` | `/api/users/register/` | Público | Registro de nuevos usuarios (rol inicial `ESTUDIANTE`). |
+| `GET` | `/api/users/me/` | Autenticado | Obtiene la información del perfil del usuario en sesión. |
+| `GET` | `/api/facultades/` | Público | Lista todas las facultades registradas. |
+| `POST` | `/api/facultades/` | `ADMIN` | Registra una nueva facultad institucional. |
+| `GET` | `/api/facultades/{id}/`| Público | Obtiene el detalle de una facultad específica. |
+| `PUT/PATCH/DELETE` | `/api/facultades/{id}/` | `ADMIN` | Modifica o da de baja una facultad. |
+| `GET` | `/api/materias/` | Autenticado | Lista materias propias (los `ADMIN` ven todas). |
+| `POST` | `/api/materias/` | `ADMIN`, `DOCENTE` | Crea una materia (asignación automática del autor autenticado). |
+| `GET` | `/api/materias/{id}/` | Propietario / `ADMIN` | Obtiene el detalle de una materia. |
+| `PUT/PATCH/DELETE` | `/api/materias/{id}/` | Propietario / `ADMIN` | Modifica o elimina una materia propia. |
+| `GET` | `/api/examenes/` | Autenticado | Lista exámenes asociados a materias propias. |
+| `POST` | `/api/examenes/` | `ADMIN`, `DOCENTE` | Registra examen para una materia propia (o cualquiera si es `ADMIN`). |
+| `PUT/PATCH/DELETE` | `/api/examenes/{id}/` | Propietario / `ADMIN` | Modifica o elimina un examen asociado a su materia. |
+
+---
+
+## 🎨 Frontend (React + Vite + Bootstrap)
+
+El cliente web se encuentra en el directorio [`Frontend/`](file:///home/alejrz/prog/Programaci-n-1/Frontend/README.md).
+
+### Características Destacadas
+- **Enrutamiento Declarativo**: Configurado con `react-router-dom` v7. Rutas públicas (`/login`, `/register`) y rutas protegidas (`/`) mediante el componente guard [`ProtectedRoute`](file:///home/alejrz/prog/Programaci-n-1/Frontend/src/components/ProtectedRoute.jsx).
+- **Context API (`AuthContext`)**: Manejo centralizado del estado de sesión, métodos de autenticación, validación de credenciales y persistencia en memoria para desarrollo.
+- **Monitor de Avance y Semáforo Académico**: Cálculo desacoplado en [`progress.js`](file:///home/alejrz/prog/Programaci-n-1/Frontend/src/utils/progress.js):
+  - 🔴 **Crítico / Inicio**: 0% a 39% de créditos obtenidos (`text-bg-danger`).
+  - 🟡 **En Proceso**: 40% a 74% de créditos obtenidos (`text-bg-warning`).
+  - 🟢 **Avanzado / Completado**: 75% a 100% de créditos obtenidos (`text-bg-success`).
+- **Paleta de Diseño**: Integración sobre variables SCSS/CSS de Bootstrap con color primario terracota (`#c05621`), garantizando contraste accesible WCAG AA.
+
+---
+
+## 🧪 Pruebas Automatizadas y Metodología TDD
+
+El proyecto cuenta con suites de prueba automatizadas tanto en el backend como en el frontend, diseñadas bajo el ciclo **Red → Green → Refactor**:
+
+### 1. Pruebas de Backend (Django Test Suite)
+Ejecuta 51 pruebas de integración, comportamiento, infraestructura y contratos de API utilizando base de datos en memoria (`sqlite3`):
+```bash
+python manage.py test --settings=Gestor.test_settings -v 2
+```
+**Casos cubiertos:**
+- **Infraestructura y Configuración Base (TP1)**: Verificación de `INSTALLED_APPS`, orden y prioridad de `CorsMiddleware` y disponibilidad del panel administrativo (`/admin/login/`).
+- **Modelado de Datos y OpenAPI (TP2)**: Representación semántica de entidades (`__str__` en `Facultad`, `Materia`, `Examen`) y disponibilidad pública de Swagger UI (`/api/docs/`) y esquema OpenAPI (`/api/schema/`).
+- **Identidad, Seguridad y Roles (TP3)**: Autenticación JWT (login exitoso, credenciales inválidas, refresh de token), registro con validación obligatoria y única de email/username, propiedades semánticas de roles (`is_admin`, `is_docente`, `is_estudiante`) y consulta de perfil propio (`/api/users/me/`).
+- **Casos de Borde y Reglas de Negocio (TP4)**: Rechazo de choices inválidos en estados de materia y tipos de examen ('XXX'), nombres en blanco, validaciones de rango (notas 0-20, años lectivos 1900-2100, créditos no negativos), soporte de nota nula (examen pendiente) y resolución de los 10 bugs de la matriz de pruebas.
+- Aislamiento multi-inquilino por usuario en consultas GET de materias y exámenes.
+- Control estricto de permisos RBAC para facultades, materias y exámenes con bypass administrativo verificado.
+
+### 2. Pruebas de Frontend (Node.js Native Test Runner)
+Ejecuta 25 pruebas unitarias sin dependencias externas pesadas:
+```bash
+npm --prefix Frontend test
+```
+**Casos cubiertos:**
+- **Progreso Académico y Semáforo (11 tests)**:
+  - Redondeo y cálculo de porcentaje de créditos.
+  - Manejo de bordes: división por cero, créditos negativos, valores no numéricos o `NaN`.
+  - Clasificación estricta de rangos de semáforo (0, 39, 40, 74, 75, 100).
+  - Normalización bidireccional de estados de cursada (`APR`, `REG`, `CUR`, `PEN`, `REC`) y badges semánticos de Bootstrap.
+- **Autenticación y Validación en Memoria TP7 (14 tests)**:
+  - Validación de formato regex de email y rechazo de cadenas inválidas/nulas.
+  - Autenticación con credenciales válidas, insensibilidad a mayúsculas/espacios y no exposición de contraseñas.
+  - Rechazo de contraseñas incorrectas o usuarios inexistentes con mensajes de error descriptivos.
+  - Validación integral de registro: longitud mínima de contraseña (4 caracteres), unicidad de usuario y unicidad de correo electrónico.
+  - Creación y normalización de usuarios con rol `estudiante`.
+
+---
+
+## ⚙️ Puesta en Marcha Local
+
+### Requisitos Previos
+- **Python**: 3.13 o superior
+- **Node.js**: 18.0 o superior (con npm)
+- **PostgreSQL**: Instalado localmente o vía Docker
+
+### 1. Configuración del Backend
+
+1. **Crear y activar el entorno virtual**:
    ```bash
-   python -m venv venv
-   .\venv\Scripts\activate
+   python -m venv .venv
+   source .venv/bin/activate       # En Linux/macOS
+   # .venv\Scripts\activate       # En Windows
    ```
-2. **Dependencias**:
+
+2. **Instalar dependencias**:
    ```bash
    pip install -r requirements.txt
    ```
-3. **Base de Datos**: Crear la base de datos `programacion1_db` y el usuario `postgres_django_user` en PostgreSQL.
-4. **Migraciones**:
+
+3. **Variables de entorno**:
+   Crear un archivo `.env` basado en `.env.example`:
+   ```env
+   SECRET_KEY=django-insecure-development-key-32-chars-long
+   DEBUG=True
+   ALLOWED_HOSTS=localhost,127.0.0.1
+   DB_NAME=programacion1_db
+   DB_USER=postgres_django_user
+   DB_PASSWORD=secret
+   DB_HOST=localhost
+   DB_PORT=5432
+   ```
+
+4. **Base de Datos (Docker opcional)**:
+   Si dispone de Docker:
+   ```bash
+   docker compose up -d
+   ```
+
+5. **Aplicar migraciones y crear superusuario**:
    ```bash
    python manage.py migrate
+   python manage.py createsuperuser
    ```
-5. **Ejecutar**:
+
+6. **Iniciar el servidor API**:
    ```bash
    python manage.py runserver
    ```
+   El servidor estará disponible en `http://127.0.0.1:8000/`.
+
+---
+
+### 2. Configuración del Frontend
+
+1. **Instalar dependencias**:
+   ```bash
+   cd Frontend
+   npm install
+   ```
+
+2. **Ejecutar en modo de desarrollo**:
+   ```bash
+   npm run dev
+   ```
+   La aplicación se abrirá en `http://localhost:3000/`.
+
+3. **Comandos útiles**:
+   ```bash
+   npm test        # Ejecuta las pruebas unitarias
+   npm run lint    # Ejecuta el análisis estático con ESLint
+   npm run build   # Genera el build optimizado para producción
+   ```
+
+---
+
+## 🧼 Principios de Clean Code Aplicados
+
+1. **Nombres Significativos e Intención Reveladora**: Constantes descriptivas (`SEMAFORO`, `ESTADO_BADGE`, `User.Role.ADMIN`), evitando números mágicos y cadenas repetidas.
+2. **Funciones Pequeñas con Responsabilidad Única**: Separación de subcomponentes visuales (`StatCard`, `ProgressCard`, `PlanEstudioCard`, `MesasExamenCard`) y utilidades puras (`calcularPorcentaje`, `obtenerSemaforo`).
+3. **Manejo Seguro de Errores y Validaciones**: Serializadores con validaciones explícitas de bordes y mensajes de error orientados a seguridad (mensajes genéricos en login para evitar enumeración de usuarios).
+4. **Pruebas en Seams Públicos (TDD)**: Pruebas unitarias y de integración que verifican el contrato público de los endpoints y módulos, garantizando refactorizaciones seguras.
+
