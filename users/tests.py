@@ -152,3 +152,13 @@ class UserAuthenticationTests(APITestCase):
         self.assertIn('email', response.data)
 
 
+class CorsConfigurationTests(APITestCase):
+    """Verifica que el backend admita peticiones desde el frontend en desarrollo (Vite)."""
+
+    def test_vite_development_origins_are_allowed(self):
+        from django.conf import settings
+        self.assertIn('http://localhost:5173', settings.CORS_ALLOWED_ORIGINS)
+        self.assertIn('http://127.0.0.1:5173', settings.CORS_ALLOWED_ORIGINS)
+
+
+
