@@ -48,8 +48,8 @@ export function AuthProvider({ children }) {
     return await authService.register({ username, password, email })
   }, [])
 
-  const logout = useCallback(() => {
-    authService.logout()
+  const logout = useCallback(async () => {
+    await authService.logout()
     setUser(null)
   }, [])
 

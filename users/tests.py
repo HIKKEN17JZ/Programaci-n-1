@@ -77,6 +77,24 @@ class UserAuthenticationTests(APITestCase):
         })
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
+    def test_logout_blacklists_refresh_token_success(self):
+        """Logout exitoso invalida (blacklist) el refresh token en el backend."""
+        token_resp = self.client.post('/api/token/', {
+            'username': 'alumno_user',
+            'password': 'Password123!'
+        })
+        refresh_token = token_resp.data['refresh']
+
+        logout_resp = self.client.post('/api/logout/', {
+            'refresh': refresh_token
+        })
+        self.assertIn(logout_resp.status_code, [status.HTTP_200_OK, status.HTTP_205_RESET_CONTENT])
+
+        refresh_again = self.client.post('/api/token/refresh/', {
+            'refresh': refresh_token
+        })
+        self.assertEqual(refresh_again.status_code, status.HTTP_401_UNAUTHORIZED)
+
     def test_user_me_authenticated(self):
         """Usuario autenticado puede consultar su propio perfil."""
         self.client.force_authenticate(user=self.estudiante)

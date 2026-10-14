@@ -141,15 +141,72 @@ describe('Servicio de Autenticación (authService - TP8 - TDD)', () => {
     assert.strictEqual(tokensLimpiados, true)
   })
 
-  it('logout limpia los tokens en storage', () => {
+  it('logout con refresh token: envía POST a /logout/ con el token y limpia el storage', async () => {
+    let capturedBody = null
+    let capturedOptions = null
     let tokensLimpiados = false
+
+    const fakeApiClient = {
+      post: async (endpoint, body, options) => {
+        if (endpoint === '/logout/') {
+          capturedBody = body
+          capturedOptions = options
+          return { detail: 'Token blacklisted' }
+        }
+        throw new Error(`Endpoint inesperado: ${endpoint}`)
+      },
+    }
+
     const fakeStorage = {
+      getRefreshToken: () => 'refresh-token-activo',
       clearTokens: () => { tokensLimpiados = true },
     }
 
-    const authService = createAuthService({ storage: fakeStorage })
-    authService.logout()
+    const authService = createAuthService({ apiClient: fakeApiClient, storage: fakeStorage })
+    await authService.logout()
 
+    assert.deepStrictEqual(capturedBody, { refresh: 'refresh-token-activo' })
+    assert.strictEqual(capturedOptions?.skipAuth, true)
+    assert.strictEqual(tokensLimpiados, true)
+  })
+
+  it('logout resiliente: limpia tokens locales incluso si el backend falla o no hay refresh token', async () => {
+    let tokensLimpiados = false
+
+    const fakeApiClient = {
+      post: async () => {
+        throw new ApiError(400, { detail: 'Token is already in blacklist' })
+      },
+    }
+
+    const fakeStorage = {
+      getRefreshToken: () => 'refresh-invalido',
+      clearTokens: () => { tokensLimpiados = true },
+    }
+
+    const authService = createAuthService({ apiClient: fakeApiClient, storage: fakeStorage })
+    await authService.logout()
+
+    assert.strictEqual(tokensLimpiados, true)
+  })
+
+  it('logout sin refresh token: limpia storage local sin llamar a la API', async () => {
+    let apiLlamada = false
+    let tokensLimpiados = false
+
+    const fakeApiClient = {
+      post: async () => { apiLlamada = true },
+    }
+
+    const fakeStorage = {
+      getRefreshToken: () => null,
+      clearTokens: () => { tokensLimpiados = true },
+    }
+
+    const authService = createAuthService({ apiClient: fakeApiClient, storage: fakeStorage })
+    await authService.logout()
+
+    assert.strictEqual(apiLlamada, false)
     assert.strictEqual(tokensLimpiados, true)
   })
 

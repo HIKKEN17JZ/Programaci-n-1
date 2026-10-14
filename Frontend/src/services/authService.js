@@ -99,7 +99,20 @@ export function createAuthService({ apiClient = api, storage = tokenStorage } = 
       }
     },
 
-    logout() {
+    async logout() {
+      const refreshToken = storage.getRefreshToken()
+      if (refreshToken) {
+        try {
+          await apiClient.post(
+            '/logout/',
+            { refresh: refreshToken },
+            { skipAuth: true }
+          )
+        } catch {
+          // Ignoramos errores de red o token ya invalidado para
+          // garantizar siempre la destrucción local de la sesión.
+        }
+      }
       storage.clearTokens()
     },
   }
