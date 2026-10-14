@@ -77,6 +77,24 @@ class UserAuthenticationTests(APITestCase):
         })
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
+    def test_logout_blacklists_refresh_token_success(self):
+        """Logout exitoso invalida (blacklist) el refresh token en el backend."""
+        token_resp = self.client.post('/api/token/', {
+            'username': 'alumno_user',
+            'password': 'Password123!'
+        })
+        refresh_token = token_resp.data['refresh']
+
+        logout_resp = self.client.post('/api/logout/', {
+            'refresh': refresh_token
+        })
+        self.assertIn(logout_resp.status_code, [status.HTTP_200_OK, status.HTTP_205_RESET_CONTENT])
+
+        refresh_again = self.client.post('/api/token/refresh/', {
+            'refresh': refresh_token
+        })
+        self.assertEqual(refresh_again.status_code, status.HTTP_401_UNAUTHORIZED)
+
     def test_user_me_authenticated(self):
         """Usuario autenticado puede consultar su propio perfil."""
         self.client.force_authenticate(user=self.estudiante)
@@ -150,5 +168,27 @@ class UserAuthenticationTests(APITestCase):
         response = self.client.post('/api/users/register/', payload)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('email', response.data)
+
+    def test_register_via_root_api_alias_success(self):
+        """Registro exitoso a través del alias /api/register/ definido en la consigna."""
+        payload = {
+            'username': 'nuevo_alumno_alias',
+            'email': 'nuevo_alias@test.edu.ar',
+            'password': 'Password123!'
+        }
+        response = self.client.post('/api/register/', payload)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['username'], 'nuevo_alumno_alias')
+
+
+
+class CorsConfigurationTests(APITestCase):
+    """Verifica que el backend admita peticiones desde el frontend en desarrollo (Vite)."""
+
+    def test_vite_development_origins_are_allowed(self):
+        from django.conf import settings
+        self.assertIn('http://localhost:5173', settings.CORS_ALLOWED_ORIGINS)
+        self.assertIn('http://127.0.0.1:5173', settings.CORS_ALLOWED_ORIGINS)
+
 
 

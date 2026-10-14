@@ -18,6 +18,23 @@ export function validarFormatoEmail(email) {
 }
 
 /**
+ * Valida la presencia y consistencia básica de credenciales de inicio de sesión.
+ *
+ * @param {string} username
+ * @param {string} password
+ * @returns {{ ok: boolean, message?: string }}
+ */
+export function validarCredencialesLogin(username, password) {
+  if (!username || !password || typeof username !== 'string' || typeof password !== 'string') {
+    return { ok: false, message: 'Debe ingresar usuario y contraseña' }
+  }
+  if (!username.trim() || !password.trim()) {
+    return { ok: false, message: 'Debe ingresar usuario y contraseña' }
+  }
+  return { ok: true }
+}
+
+/**
  * Autentica un usuario contra el repositorio en memoria.
  *
  * @param {Array} users - Lista de usuarios en memoria.
@@ -26,8 +43,9 @@ export function validarFormatoEmail(email) {
  * @returns {{ ok: boolean, message?: string, user?: { username: string, email: string, rol: string } }}
  */
 export function autenticarUsuario(users, username, password) {
-  if (!username || !password || typeof username !== 'string' || typeof password !== 'string') {
-    return { ok: false, message: 'Debe ingresar usuario y contraseña' }
+  const check = validarCredencialesLogin(username, password)
+  if (!check.ok) {
+    return check
   }
 
   const cleanUsername = username.trim().toLowerCase()

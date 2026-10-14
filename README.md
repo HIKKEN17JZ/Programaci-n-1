@@ -29,6 +29,7 @@ El repositorio reúne de forma progresiva las metas establecidas a lo largo de l
 | **TP 5** | Inicio del Frontend React | Inicialización del cliente web SPA en `Frontend/` con Vite y React 19 en puerto 3000, scripts npm, arquitectura monorepo y diseño inicial de Home. |
 | **TP 6** | Maquetado Responsive (Bootstrap) | Interfaz completa de Home modularizada: Hero section, tarjetas de métricas (`StatCard`), monitor de avance (`ProgressCard`), plan de estudio (`PlanEstudioCard`), mesas de examen (`MesasExamenCard`), Navbar colapsable con logo e isotipo SVG y Footer accesible libre de desbordes. |
 | **TP 7** | Sistema Auth en Frontend | Contexto global de autenticación (`AuthContext` + `useAuth`), rutas protegidas (`ProtectedRoute`), vistas completas de `Login` y `Register` con validaciones y alertas, y flujo de cierre de sesión (`Logout`). |
+| **TP 8** | **Conexión Frontend con Backend** | Conexión integral de la SPA con Django REST Framework y SimpleJWT. Variables de entorno (`VITE_API_URL`), configuración CORS para Vite (`localhost:5173`), cliente HTTP desacoplado (`api.js`), almacenamiento seguro de tokens JWT (`storage.js`), autenticación real (login/register asíncronos), persistencia de sesión por token (`/api/users/me/`), lista negra en logout (`/api/logout/`), Home dinámica consumiendo `/api/materias/` y `/api/examenes/`, y suite automatizada con 53 tests en Frontend y 54 tests en Backend bajo TDD y Clean Code. |
 | **Rama `detalles`** | **Clean Code & TDD Integral** | Reanálisis y refactorización integral: 51 tests automatizados en Django (incluyendo smoke tests de TP1, contratos de entidades/OpenAPI de TP2, validaciones de TP3 y casos de borde de TP4), 25 tests unitarios en Frontend (`node:test`), modularización de cálculos en `progress.js`, lógica pura de validación en `auth.js`, corrección de asignación de autoría en serializadores (`read_only_fields = ['usuario']`), validación de email duplicado y código libre de advertencias. |
 
 ---
@@ -44,12 +45,14 @@ Programaci-n-1/
 ├── users/                # App de identidad: modelo User personalizado, serializadores, permisos RBAC y tests
 ├── docs/                 # Matriz de pruebas de TP4 y colección de Postman
 ├── Frontend/             # Cliente Single Page Application (SPA)
+│   ├── .env.example      # Plantilla de variables de entorno (VITE_API_URL)
 │   ├── src/
 │   │   ├── components/   # Componentes reutilizables (Navbar, Footer, StatCard, ProgressCard, PlanEstudioCard, MesasExamenCard, ProtectedRoute)
 │   │   ├── contexts/     # Context API para estado de autenticación (AuthContext)
 │   │   ├── data/         # Mock data inicial para desarrollo
 │   │   ├── hooks/        # Custom hooks (useAuth)
-│   │   ├── utils/        # Utilidades puras testeadas (progress.js)
+│   │   ├── services/     # Capa de servicios y comunicación HTTP (api.js, storage.js, authService.js, academicService.js)
+│   │   ├── utils/        # Utilidades puras testeadas (progress.js, auth.js)
 │   │   └── views/        # Vistas de la aplicación (Home, Login, Register)
 │   └── package.json      # Dependencias y scripts de Node.js
 └── requirements.txt      # Dependencias de Python
@@ -246,17 +249,27 @@ npm --prefix Frontend test
    npm install
    ```
 
-2. **Ejecutar en modo de desarrollo**:
+2. **Variables de entorno**:
+   Copiar la plantilla `.env.example` a `.env` (si aún no existe):
+   ```bash
+   cp .env.example .env
+   ```
+   Contenido configurado:
+   ```env
+   VITE_API_URL=http://localhost:8000/api
+   ```
+
+3. **Ejecutar en modo de desarrollo**:
    ```bash
    npm run dev
    ```
-   La aplicación se abrirá en `http://localhost:3000/`.
+   La aplicación se abrirá en `http://localhost:5173/` (o `http://localhost:3000/`).
 
-3. **Comandos útiles**:
+4. **Comandos útiles de verificación**:
    ```bash
-   npm test        # Ejecuta las pruebas unitarias
-   npm run lint    # Ejecuta el análisis estático con ESLint
-   npm run build   # Genera el build optimizado para producción
+   npm test        # Ejecuta las 53 pruebas unitarias (node:test)
+   npm run lint    # Ejecuta el análisis estático con ESLint (0 errores, 0 advertencias)
+   npm run build   # Genera el bundle compilado de producción con Vite
    ```
 
 ---

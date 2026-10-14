@@ -6,6 +6,8 @@ import {
   SEMAFORO,
   ESTADO_BADGE,
   obtenerEtiquetaEstado,
+  calcularCreditos,
+  formatearMesaExamen,
 } from './progress.js'
 
 describe('Utilidades de Progreso Académico', () => {
@@ -94,6 +96,65 @@ describe('Utilidades de Progreso Académico', () => {
       assert.strictEqual(ESTADO_BADGE.CUR, 'text-bg-info')
       assert.strictEqual(ESTADO_BADGE.REC, 'text-bg-danger')
       assert.strictEqual(ESTADO_BADGE.Recursando, 'text-bg-danger')
+    })
+  })
+
+  describe('calcularCreditos', () => {
+    it('calcula créditos totales y obtenidos a partir de la lista de materias de la API', () => {
+      const materias = [
+        { nombre: 'Matemática I', creditos_totales: 8, estado: 'APR' },
+        { nombre: 'Física I', creditos_totales: 6, estado: 'Aprobada' },
+        { nombre: 'Programación I', creditos_totales: 10, estado: 'CUR' },
+        { nombre: 'Química', creditos_totales: 4, estado: 'PEN' },
+      ]
+      const { obtenidos, totales } = calcularCreditos(materias)
+      assert.strictEqual(totales, 28)
+      assert.strictEqual(obtenidos, 14) // 8 + 6
+    })
+
+    it('devuelve ceros de forma segura ante listas vacías o nulas', () => {
+      assert.deepStrictEqual(calcularCreditos([]), { obtenidos: 0, totales: 0 })
+      assert.deepStrictEqual(calcularCreditos(null), { obtenidos: 0, totales: 0 })
+    })
+  })
+
+  describe('formatearMesaExamen', () => {
+    it('asocia el nombre de materia y formatea el llamado según el tipo de examen de la API', () => {
+      const materias = [
+        { id: 1, nombre: 'Programación I' },
+        { id: 2, nombre: 'Base de Datos' },
+      ]
+      const examen = { id: 10, materia: 1, fecha: '2026-12-15', nota: 9, tipo: 'FIN' }
+
+      const resultado = formatearMesaExamen(examen, materias)
+      assert.strictEqual(resultado.materia, 'Programación I')
+      assert.strictEqual(resultado.llamado, 'Examen Final')
+      assert.strictEqual(resultado.nota, 9)
+      assert.strictEqual(resultado.fecha, '2026-12-15')
+    })
+
+    it('resuelve adecuadamente si materia ya es texto o si no se encuentra en el mapa', () => {
+      const examen = { id: 11, materia: 'Álgebra', fecha: '2026-11-20', nota: null, tipo: 'PAR' }
+      const resultado = formatearMesaExamen(examen, [])
+      assert.strictEqual(resultado.materia, 'Álgebra')
+      assert.strictEqual(resultado.llamado, 'Examen Parcial')
+      assert.strictEqual(resultado.nota, null)
+    })
+
+    it('compara IDs de forma segura independientemente de si son number o string', () => {
+      const materias = [
+        { id: 1, nombre: 'Programación I' },
+        { id: '2', nombre: 'Base de Datos' },
+      ]
+
+      const res1 = formatearMesaExamen({ id: 20, materia: '1', fecha: '2026-12-20', tipo: 'FIN' }, materias)
+      assert.strictEqual(res1.materia, 'Programación I')
+
+      const res2 = formatearMesaExamen({ id: 21, materia: 2, fecha: '2026-12-21', tipo: 'PAR' }, materias)
+      assert.strictEqual(res2.materia, 'Base de Datos')
+
+      const res3 = formatearMesaExamen({ id: 22, materia: '99', fecha: '2026-12-22' }, materias)
+      assert.strictEqual(res3.materia, 'Materia #99')
     })
   })
 })

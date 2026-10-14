@@ -9,18 +9,28 @@ function Login() {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
 
   if (user !== null) {
     return <Navigate to="/" replace />
   }
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault()
-    const result = login(username.trim(), password)
-    if (result.ok) {
-      navigate(location.state?.from ?? '/', { replace: true })
-    } else {
-      setError(result.message)
+    setError('')
+    setLoading(true)
+
+    try {
+      const result = await login(username.trim(), password)
+      if (result.ok) {
+        navigate(location.state?.from ?? '/', { replace: true })
+      } else {
+        setError(result.message)
+      }
+    } catch (err) {
+      setError(err?.message || 'Error de conexión con el servidor')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -52,6 +62,7 @@ function Login() {
                 onChange={(event) => setUsername(event.target.value)}
                 autoComplete="username"
                 required
+                disabled={loading}
               />
             </div>
             <div className="mb-3">
@@ -65,9 +76,15 @@ function Login() {
                 autoComplete="current-password"
                 required
                 minLength={4}
+                disabled={loading}
               />
             </div>
-            <button type="submit" className="btn btn-primary w-100">Ingresar</button>
+            <button type="submit" className="btn btn-primary w-100" disabled={loading}>
+              {loading ? (
+                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" />
+              ) : null}
+              {loading ? 'Ingresando...' : 'Ingresar'}
+            </button>
           </form>
           <p className="text-center mt-3 mb-0">
             <Link to="/register">¿No tenés cuenta? Registrate</Link>
