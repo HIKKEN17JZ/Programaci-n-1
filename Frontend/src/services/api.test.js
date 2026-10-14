@@ -133,4 +133,24 @@ describe('Cliente API HTTP (TP8 - TDD)', () => {
       }
     )
   })
+
+  it('devuelve null de forma segura en respuestas 204 No Content', async () => {
+    const mockFetch = async () => ({
+      ok: true,
+      status: 204,
+      headers: new Headers(),
+      json: async () => {
+        throw new SyntaxError('Unexpected end of JSON input')
+      },
+      text: async () => '',
+    })
+
+    const client = createApiClient({
+      baseUrl: 'http://localhost:8000/api',
+      customFetch: mockFetch,
+    })
+
+    const result = await client.delete('/materias/1/')
+    assert.strictEqual(result, null)
+  })
 })

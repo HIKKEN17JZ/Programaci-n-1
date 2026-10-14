@@ -121,7 +121,7 @@ describe('Servicio de Autenticación (authService - TP8 - TDD)', () => {
     assert.deepStrictEqual(user, { id: 5, username: 'docente_user', role: 'DOCENTE' })
   })
 
-  it('getCurrentUser devuelve null y limpia tokens si el backend responde 401 (token expirado)', async () => {
+  it('getCurrentUser devuelve null y limpia tokens si el backend responde 401 y no hay refresh token', async () => {
     let tokensLimpiados = false
     const fakeStorage = {
       hasToken: () => true,
@@ -139,6 +139,89 @@ describe('Servicio de Autenticación (authService - TP8 - TDD)', () => {
 
     assert.strictEqual(user, null)
     assert.strictEqual(tokensLimpiados, true)
+  })
+
+  it('refreshToken exitoso: envía POST a /token/refresh/ con skipAuth, actualiza storage y retorna nuevo access token', async () => {
+    let tokensActualizados = null
+    const fakeStorage = {
+      getRefreshToken: () => 'refresh-token-valido',
+      setTokens: (tokens) => { tokensActualizados = tokens },
+      clearTokens: () => {},
+    }
+    const fakeApiClient = {
+      post: async (endpoint, body, options) => {
+        if (endpoint === '/token/refresh/') {
+          assert.deepStrictEqual(body, { refresh: 'refresh-token-valido' })
+          assert.strictEqual(options?.skipAuth, true)
+          return { access: 'nuevo-access-token-999', refresh: 'nuevo-refresh-token-888' }
+        }
+        throw new Error(`Endpoint inesperado: ${endpoint}`)
+      },
+    }
+
+    const authService = createAuthService({ apiClient: fakeApiClient, storage: fakeStorage })
+    const nuevoToken = await authService.refreshToken()
+
+    assert.strictEqual(nuevoToken, 'nuevo-access-token-999')
+    assert.deepStrictEqual(tokensActualizados, {
+      access: 'nuevo-access-token-999',
+      refresh: 'nuevo-refresh-token-888',
+    })
+  })
+
+  it('refreshToken fallido: limpia tokens locales y devuelve null si el endpoint falla', async () => {
+    let tokensLimpiados = false
+    const fakeStorage = {
+      getRefreshToken: () => 'refresh-token-invalido',
+      setTokens: () => {},
+      clearTokens: () => { tokensLimpiados = true },
+    }
+    const fakeApiClient = {
+      post: async () => {
+        throw new ApiError(401, { detail: 'Token is invalid or expired' })
+      },
+    }
+
+    const authService = createAuthService({ apiClient: fakeApiClient, storage: fakeStorage })
+    const resultado = await authService.refreshToken()
+
+    assert.strictEqual(resultado, null)
+    assert.strictEqual(tokensLimpiados, true)
+  })
+
+  it('getCurrentUser ante 401: renueva token con refreshToken y obtiene el perfil exitosamente', async () => {
+    let llamadasGet = 0
+    let refreshLlamado = false
+    const fakeStorage = {
+      hasToken: () => true,
+      getRefreshToken: () => 'refresh-valido',
+      setTokens: () => {},
+      clearTokens: () => {},
+    }
+    const fakeApiClient = {
+      get: async (endpoint) => {
+        if (endpoint === '/users/me/') {
+          llamadasGet++
+          if (llamadasGet === 1) {
+            throw new ApiError(401, { detail: 'Token expirado' })
+          }
+          return { id: 7, username: 'alumno_renovado', role: 'ESTUDIANTE' }
+        }
+      },
+      post: async (endpoint) => {
+        if (endpoint === '/token/refresh/') {
+          refreshLlamado = true
+          return { access: 'nuevo-access-token' }
+        }
+      },
+    }
+
+    const authService = createAuthService({ apiClient: fakeApiClient, storage: fakeStorage })
+    const user = await authService.getCurrentUser()
+
+    assert.strictEqual(refreshLlamado, true)
+    assert.strictEqual(llamadasGet, 2)
+    assert.deepStrictEqual(user, { id: 7, username: 'alumno_renovado', role: 'ESTUDIANTE' })
   })
 
   it('logout con refresh token: envía POST a /logout/ con el token y limpia el storage', async () => {

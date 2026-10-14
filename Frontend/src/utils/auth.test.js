@@ -4,6 +4,7 @@ import {
   autenticarUsuario,
   validarRegistro,
   validarFormatoEmail,
+  validarCredencialesLogin,
   crearUsuarioEstudiante,
 } from './auth.js'
 
@@ -13,6 +14,19 @@ const USUARIOS_TEST = [
 ]
 
 describe('Sistema de Autenticación y Control de Acceso (TP7)', () => {
+  describe('validarCredencialesLogin', () => {
+    it('aprueba credenciales válidas', () => {
+      assert.deepStrictEqual(validarCredencialesLogin('alumno', 'password123'), { ok: true })
+    })
+
+    it('rechaza credenciales vacías, nulas o con solo espacios', () => {
+      assert.strictEqual(validarCredencialesLogin('', '1234').ok, false)
+      assert.strictEqual(validarCredencialesLogin('user', '').ok, false)
+      assert.strictEqual(validarCredencialesLogin('   ', '1234').ok, false)
+      assert.strictEqual(validarCredencialesLogin(null, '1234').ok, false)
+    })
+  })
+
   describe('validarFormatoEmail', () => {
     it('acepta formatos de email válidos', () => {
       assert.strictEqual(validarFormatoEmail('alumno@um.edu.ar'), true)

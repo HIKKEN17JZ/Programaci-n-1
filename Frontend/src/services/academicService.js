@@ -8,12 +8,12 @@ import {
 export function createAcademicService({ apiClient = api } = {}) {
   async function getMaterias() {
     const data = await apiClient.get('/materias/')
-    return Array.isArray(data) ? data : []
+    return Array.isArray(data) ? data : (data?.results || [])
   }
 
   async function getExamenes() {
     const data = await apiClient.get('/examenes/')
-    return Array.isArray(data) ? data : []
+    return Array.isArray(data) ? data : (data?.results || [])
   }
 
   async function getDashboardData() {

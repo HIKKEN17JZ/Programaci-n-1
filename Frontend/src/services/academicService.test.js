@@ -65,4 +65,36 @@ describe('Servicio Académico (academicService - TP8 - TDD)', () => {
     assert.strictEqual(data.avance.obtenidos, 10)
     assert.strictEqual(data.avance.porcentaje, 50)
   })
+
+  it('soporta respuestas paginadas de DRF ({ results: [...] }) en getMaterias y getExamenes', async () => {
+    const fakeApiClient = {
+      get: async (endpoint) => {
+        if (endpoint === '/materias/') {
+          return {
+            count: 1,
+            next: null,
+            previous: null,
+            results: [{ id: 1, nombre: 'Base de Datos' }],
+          }
+        }
+        if (endpoint === '/examenes/') {
+          return {
+            count: 1,
+            next: null,
+            previous: null,
+            results: [{ id: 5, materia: 1, fecha: '2026-11-10' }],
+          }
+        }
+      },
+    }
+
+    const service = createAcademicService({ apiClient: fakeApiClient })
+    const materias = await service.getMaterias()
+    const examenes = await service.getExamenes()
+
+    assert.strictEqual(materias.length, 1)
+    assert.strictEqual(materias[0].nombre, 'Base de Datos')
+    assert.strictEqual(examenes.length, 1)
+    assert.strictEqual(examenes[0].id, 5)
+  })
 })

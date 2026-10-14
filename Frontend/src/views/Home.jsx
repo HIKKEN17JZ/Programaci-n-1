@@ -88,13 +88,15 @@ function Home() {
         </div>
       )}
 
-      {loading ? (
+      {loading && (
         <div className="d-flex justify-content-center align-items-center py-5">
           <div className="spinner-border text-primary" role="status">
             <span className="visually-hidden">Cargando datos académicos...</span>
           </div>
         </div>
-      ) : (
+      )}
+
+      {!loading && !error && (
         <>
           <section className="bg-light py-4">
             <div className="container">

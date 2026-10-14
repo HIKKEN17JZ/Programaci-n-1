@@ -87,6 +87,10 @@ export function createApiClient({
       ...extraOptions,
     })
 
+    if (response.status === 204) {
+      return null
+    }
+
     const contentType = response.headers.get('content-type') || ''
     const isJson = contentType.includes('application/json')
     const responseData = isJson ? await response.json() : await response.text()

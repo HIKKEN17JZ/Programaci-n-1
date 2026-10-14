@@ -129,9 +129,18 @@ export function calcularCreditos(materias = []) {
  */
 export function formatearMesaExamen(examen = {}, materias = []) {
   let nombreMateria = examen.materia
-  if (typeof examen.materia === 'number') {
-    const encontrada = (materias || []).find((m) => m.id === examen.materia)
-    nombreMateria = encontrada?.nombre || `Materia #${examen.materia}`
+  if (examen.materia !== undefined && examen.materia !== null) {
+    const encontrada = (materias || []).find(
+      (m) => m && m.id !== undefined && String(m.id) === String(examen.materia)
+    )
+    if (encontrada) {
+      nombreMateria = encontrada.nombre
+    } else if (
+      typeof examen.materia === 'number' ||
+      (!isNaN(Number(examen.materia)) && typeof examen.materia !== 'boolean' && String(examen.materia).trim() !== '')
+    ) {
+      nombreMateria = `Materia #${examen.materia}`
+    }
   }
 
   const llamado = TIPO_EXAMEN_LABEL[examen.tipo] || examen.llamado || 'Examen'

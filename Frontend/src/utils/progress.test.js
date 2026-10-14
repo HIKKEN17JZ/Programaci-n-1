@@ -140,6 +140,22 @@ describe('Utilidades de Progreso Académico', () => {
       assert.strictEqual(resultado.llamado, 'Examen Parcial')
       assert.strictEqual(resultado.nota, null)
     })
+
+    it('compara IDs de forma segura independientemente de si son number o string', () => {
+      const materias = [
+        { id: 1, nombre: 'Programación I' },
+        { id: '2', nombre: 'Base de Datos' },
+      ]
+
+      const res1 = formatearMesaExamen({ id: 20, materia: '1', fecha: '2026-12-20', tipo: 'FIN' }, materias)
+      assert.strictEqual(res1.materia, 'Programación I')
+
+      const res2 = formatearMesaExamen({ id: 21, materia: 2, fecha: '2026-12-21', tipo: 'PAR' }, materias)
+      assert.strictEqual(res2.materia, 'Base de Datos')
+
+      const res3 = formatearMesaExamen({ id: 22, materia: '99', fecha: '2026-12-22' }, materias)
+      assert.strictEqual(res3.materia, 'Materia #99')
+    })
   })
 })
 

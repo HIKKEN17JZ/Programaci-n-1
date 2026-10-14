@@ -55,4 +55,29 @@ describe('Servicio de Almacenamiento de Tokens (TP8 - TDD)', () => {
     tokenStorage.setTokens({ access: 'token-valido' })
     assert.strictEqual(tokenStorage.hasToken(), true)
   })
+
+  it('maneja excepciones de forma segura si el storage arroja error (ej. navegación privada o cuota excedida)', () => {
+    const errorStorage = {
+      getItem: () => {
+        throw new Error('QuotaExceededError: Access denied')
+      },
+      setItem: () => {
+        throw new Error('QuotaExceededError: Access denied')
+      },
+      removeItem: () => {
+        throw new Error('QuotaExceededError: Access denied')
+      },
+    }
+
+    const tokenStorage = createTokenStorage(errorStorage)
+
+    assert.strictEqual(tokenStorage.getAccessToken(), null)
+    assert.strictEqual(tokenStorage.getRefreshToken(), null)
+    assert.strictEqual(tokenStorage.hasToken(), false)
+
+    assert.doesNotThrow(() => {
+      tokenStorage.setTokens({ access: 'tok', refresh: 'ref' })
+      tokenStorage.clearTokens()
+    })
+  })
 })
