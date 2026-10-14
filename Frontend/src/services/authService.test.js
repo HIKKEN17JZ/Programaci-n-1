@@ -152,4 +152,75 @@ describe('Servicio de Autenticación (authService - TP8 - TDD)', () => {
 
     assert.strictEqual(tokensLimpiados, true)
   })
+
+  it('register exitoso: envía POST a /users/register/ con datos normalizados y skipAuth: true', async () => {
+    let capturedBody = null
+    let capturedOptions = null
+    const fakeApiClient = {
+      post: async (endpoint, body, options) => {
+        if (endpoint === '/users/register/') {
+          capturedBody = body
+          capturedOptions = options
+          return { id: 10, username: 'nuevo_estudiante', email: 'nuevo@um.edu.ar' }
+        }
+        throw new Error(`Endpoint inesperado: ${endpoint}`)
+      },
+    }
+
+    const authService = createAuthService({ apiClient: fakeApiClient })
+    const result = await authService.register({
+      username: '  nuevo_estudiante  ',
+      email: '  nuevo@um.edu.ar  ',
+      password: 'MiPassword123',
+    })
+
+    assert.strictEqual(result.ok, true)
+    assert.deepStrictEqual(capturedBody, {
+      username: 'nuevo_estudiante',
+      email: 'nuevo@um.edu.ar',
+      password: 'MiPassword123',
+    })
+    assert.strictEqual(capturedOptions?.skipAuth, true)
+  })
+
+  it('register validación temprana: rechaza campos obligatorios faltantes o inválidos', async () => {
+    let apiLlamada = false
+    const fakeApiClient = {
+      post: async () => { apiLlamada = true },
+    }
+    const authService = createAuthService({ apiClient: fakeApiClient })
+
+    const resIncompleto = await authService.register({ username: '', email: 'test@um.edu.ar', password: '123' })
+    assert.strictEqual(resIncompleto.ok, false)
+    assert.strictEqual(resIncompleto.message, 'Faltan datos obligatorios')
+
+    const resPassCorta = await authService.register({ username: 'user', email: 'test@um.edu.ar', password: '12' })
+    assert.strictEqual(resPassCorta.ok, false)
+    assert.strictEqual(resPassCorta.message, 'La contraseña debe tener al menos 4 caracteres')
+
+    const resEmailMalo = await authService.register({ username: 'user', email: 'correo-invalido', password: 'password' })
+    assert.strictEqual(resEmailMalo.ok, false)
+    assert.strictEqual(resEmailMalo.message, 'El formato de email no es válido')
+
+    assert.strictEqual(apiLlamada, false)
+  })
+
+  it('register error de API: propaga errores de validación de Django (ej. usuario duplicado)', async () => {
+    const fakeApiClient = {
+      post: async () => {
+        throw new ApiError(400, { username: ['A user with that username already exists.'] })
+      },
+    }
+    const authService = createAuthService({ apiClient: fakeApiClient })
+
+    const result = await authService.register({
+      username: 'existente',
+      email: 'existente@um.edu.ar',
+      password: 'Password123',
+    })
+
+    assert.strictEqual(result.ok, false)
+    assert.strictEqual(result.message, 'username: A user with that username already exists.')
+  })
 })
+

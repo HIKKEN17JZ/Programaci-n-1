@@ -1,13 +1,10 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useCallback, useEffect, useMemo, useState } from 'react'
 import { authService } from '../services/authService.js'
-import { HARDCODED_USERS } from '../data/hardcodedUsers.js'
-import { validarRegistro, crearUsuarioEstudiante } from '../utils/auth.js'
 
 export const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
-  const [users, setUsers] = useState(HARDCODED_USERS)
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
 
@@ -47,18 +44,9 @@ export function AuthProvider({ children }) {
     return resultado
   }, [])
 
-  const register = useCallback(
-    ({ username, password, email }) => {
-      const validacion = validarRegistro({ username, email, password }, users)
-      if (!validacion.ok) {
-        return validacion
-      }
-      const nuevoUsuario = crearUsuarioEstudiante({ username, email, password })
-      setUsers((prev) => [...prev, nuevoUsuario])
-      return { ok: true }
-    },
-    [users],
-  )
+  const register = useCallback(async ({ username, password, email }) => {
+    return await authService.register({ username, password, email })
+  }, [])
 
   const logout = useCallback(() => {
     authService.logout()

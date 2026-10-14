@@ -151,6 +151,18 @@ class UserAuthenticationTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('email', response.data)
 
+    def test_register_via_root_api_alias_success(self):
+        """Registro exitoso a través del alias /api/register/ definido en la consigna."""
+        payload = {
+            'username': 'nuevo_alumno_alias',
+            'email': 'nuevo_alias@test.edu.ar',
+            'password': 'Password123!'
+        }
+        response = self.client.post('/api/register/', payload)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['username'], 'nuevo_alumno_alias')
+
+
 
 class CorsConfigurationTests(APITestCase):
     """Verifica que el backend admita peticiones desde el frontend en desarrollo (Vite)."""

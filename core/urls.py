@@ -10,5 +10,6 @@ router.register(r'examenes', ExamenViewSet, basename='examen')
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('register/', RegisterView.as_view(), name='register-alias'),
     path('users/', include('users.urls')),
 ]

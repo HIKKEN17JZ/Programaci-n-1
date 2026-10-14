@@ -1,5 +1,6 @@
 import { api } from './api.js'
 import { tokenStorage } from './storage.js'
+import { validarFormatoEmail } from '../utils/auth.js'
 
 function validateLoginInput(username, password) {
   if (!username || !password || typeof username !== 'string' || typeof password !== 'string') {
@@ -7,6 +8,22 @@ function validateLoginInput(username, password) {
   }
   if (!username.trim() || !password.trim()) {
     return 'Debe ingresar usuario y contraseña'
+  }
+  return null
+}
+
+function validateRegisterInput({ username, email, password } = {}) {
+  const cleanUsername = typeof username === 'string' ? username.trim() : ''
+  const cleanEmail = typeof email === 'string' ? email.trim() : ''
+
+  if (!cleanUsername || !cleanEmail || !password || typeof password !== 'string') {
+    return 'Faltan datos obligatorios'
+  }
+  if (password.length < 4) {
+    return 'La contraseña debe tener al menos 4 caracteres'
+  }
+  if (!validarFormatoEmail(cleanEmail)) {
+    return 'El formato de email no es válido'
   }
   return null
 }
@@ -38,6 +55,31 @@ export function createAuthService({ apiClient = api, storage = tokenStorage } = 
         return {
           ok: false,
           message: error?.message || 'Error al iniciar sesión',
+        }
+      }
+    },
+
+    async register({ username, email, password }) {
+      const validationError = validateRegisterInput({ username, email, password })
+      if (validationError) {
+        return { ok: false, message: validationError }
+      }
+
+      try {
+        const data = await apiClient.post(
+          '/users/register/',
+          {
+            username: username.trim(),
+            email: email.trim(),
+            password,
+          },
+          { skipAuth: true }
+        )
+        return { ok: true, data }
+      } catch (error) {
+        return {
+          ok: false,
+          message: error?.message || 'Error al registrar usuario',
         }
       }
     },

@@ -9,18 +9,33 @@ function Register() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
 
   if (user !== null) {
     return <Navigate to="/" replace />
   }
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault()
-    const result = register({ username: username.trim(), password, email: email.trim() })
-    if (result.ok) {
-      navigate('/login', { state: { registered: username.trim() }, replace: true })
-    } else {
-      setError(result.message)
+    setError('')
+    setLoading(true)
+
+    try {
+      const result = await register({
+        username: username.trim(),
+        password,
+        email: email.trim(),
+      })
+
+      if (result.ok) {
+        navigate('/login', { state: { registered: username.trim() }, replace: true })
+      } else {
+        setError(result.message)
+      }
+    } catch (err) {
+      setError(err?.message || 'Error de conexión con el servidor')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -45,6 +60,7 @@ function Register() {
                 onChange={(event) => setUsername(event.target.value)}
                 autoComplete="username"
                 required
+                disabled={loading}
               />
             </div>
             <div className="mb-3">
@@ -57,6 +73,7 @@ function Register() {
                 onChange={(event) => setEmail(event.target.value)}
                 autoComplete="email"
                 required
+                disabled={loading}
               />
             </div>
             <div className="mb-3">
@@ -70,9 +87,15 @@ function Register() {
                 autoComplete="new-password"
                 required
                 minLength={4}
+                disabled={loading}
               />
             </div>
-            <button type="submit" className="btn btn-primary w-100">Registrarse</button>
+            <button type="submit" className="btn btn-primary w-100" disabled={loading}>
+              {loading ? (
+                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" />
+              ) : null}
+              {loading ? 'Registrando...' : 'Registrarse'}
+            </button>
           </form>
           <p className="text-center mt-3 mb-0">
             <Link to="/login">¿Ya tenés cuenta? Iniciá sesión</Link>
