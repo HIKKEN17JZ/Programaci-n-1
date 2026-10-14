@@ -89,3 +89,59 @@ export function obtenerSemaforo(porcentaje) {
   }
   return SEMAFORO.avanzado
 }
+
+export const TIPO_EXAMEN_LABEL = {
+  PAR: 'Examen Parcial',
+  FIN: 'Examen Final',
+  PRO: 'Promoción',
+}
+
+/**
+ * Calcula créditos totales y obtenidos a partir de la lista de materias de la API.
+ *
+ * @param {Array} materias - Lista de materias.
+ * @returns {{ obtenidos: number, totales: number }}
+ */
+export function calcularCreditos(materias = []) {
+  if (!Array.isArray(materias) || materias.length === 0) {
+    return { obtenidos: 0, totales: 0 }
+  }
+
+  return materias.reduce(
+    (acc, m) => {
+      const creditos = Number(m.creditos_totales ?? m.creditos) || 0
+      acc.totales += creditos
+      if (m.estado === 'APR' || m.estado === 'Aprobada') {
+        acc.obtenidos += creditos
+      }
+      return acc
+    },
+    { obtenidos: 0, totales: 0 },
+  )
+}
+
+/**
+ * Normaliza un objeto de examen para la interfaz visual.
+ *
+ * @param {object} examen - Objeto de examen devuelto por la API.
+ * @param {Array} materias - Lista de materias del usuario para resolver el nombre.
+ * @returns {{ id: any, materia: string, llamado: string, fecha: string, nota: number|null }}
+ */
+export function formatearMesaExamen(examen = {}, materias = []) {
+  let nombreMateria = examen.materia
+  if (typeof examen.materia === 'number') {
+    const encontrada = (materias || []).find((m) => m.id === examen.materia)
+    nombreMateria = encontrada?.nombre || `Materia #${examen.materia}`
+  }
+
+  const llamado = TIPO_EXAMEN_LABEL[examen.tipo] || examen.llamado || 'Examen'
+
+  return {
+    id: examen.id,
+    materia: nombreMateria || 'Materia sin especificar',
+    llamado,
+    fecha: examen.fecha,
+    nota: examen.nota !== undefined ? examen.nota : null,
+  }
+}
+
