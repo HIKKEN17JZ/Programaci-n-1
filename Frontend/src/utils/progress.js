@@ -154,3 +154,52 @@ export function formatearMesaExamen(examen = {}, materias = []) {
   }
 }
 
+/**
+ * Calcula el promedio numérico a partir de una lista de exámenes.
+ *
+ * @param {Array} examenes - Lista de exámenes con propiedad nota.
+ * @param {object} [opciones]
+ * @param {boolean} [opciones.soloAprobados=false] - Si es true, considera solo notas >= 4.
+ * @returns {number} Promedio con hasta 2 decimales (0 si no hay notas válidas).
+ */
+export function calcularPromedio(examenes = [], { soloAprobados = false } = {}) {
+  if (!Array.isArray(examenes) || examenes.length === 0) {
+    return 0
+  }
+
+  const notasValidas = examenes
+    .map((e) => (e && e.nota !== null && e.nota !== undefined && e.nota !== '' ? Number(e.nota) : null))
+    .filter((n) => n !== null && !Number.isNaN(n))
+    .filter((n) => (!soloAprobados ? true : n >= 4))
+
+  if (notasValidas.length === 0) {
+    return 0
+  }
+
+  const suma = notasValidas.reduce((acc, curr) => acc + curr, 0)
+  return Number((suma / notasValidas.length).toFixed(2))
+}
+
+/**
+ * Genera métricas consolidadas sobre el historial de exámenes.
+ *
+ * @param {Array} examenes - Lista de exámenes.
+ * @returns {{ total: number, rendidos: number, aprobados: number, promedioGeneral: number, promedioAprobados: number }}
+ */
+export function calcularMetricasExamenes(examenes = []) {
+  const lista = Array.isArray(examenes) ? examenes : []
+  const conNota = lista.filter(
+    (e) => e && e.nota !== null && e.nota !== undefined && e.nota !== '' && !Number.isNaN(Number(e.nota))
+  )
+  const aprobados = conNota.filter((e) => Number(e.nota) >= 4)
+
+  return {
+    total: lista.length,
+    rendidos: conNota.length,
+    aprobados: aprobados.length,
+    promedioGeneral: calcularPromedio(lista, { soloAprobados: false }),
+    promedioAprobados: calcularPromedio(lista, { soloAprobados: true }),
+  }
+}
+
+

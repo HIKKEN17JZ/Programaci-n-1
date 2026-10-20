@@ -8,6 +8,8 @@ import {
   obtenerEtiquetaEstado,
   calcularCreditos,
   formatearMesaExamen,
+  calcularPromedio,
+  calcularMetricasExamenes,
 } from './progress.js'
 
 describe('Utilidades de Progreso Académico', () => {
@@ -155,6 +157,41 @@ describe('Utilidades de Progreso Académico', () => {
 
       const res3 = formatearMesaExamen({ id: 22, materia: '99', fecha: '2026-12-22' }, materias)
       assert.strictEqual(res3.materia, 'Materia #99')
+    })
+  })
+
+  describe('calcularPromedio y calcularMetricasExamenes (TDD)', () => {
+    const examenes = [
+      { id: 1, nota: 8 },
+      { id: 2, nota: 4 },
+      { id: 3, nota: 2 }, // aplazo
+      { id: 4, nota: null }, // no rendido aún
+      { id: 5, nota: '10' }, // parseable a number
+    ]
+
+    it('calcularPromedio calcula el promedio general con decimales', () => {
+      // Notas: 8 + 4 + 2 + 10 = 24 / 4 = 6.00
+      assert.strictEqual(calcularPromedio(examenes), 6.0)
+    })
+
+    it('calcularPromedio soporta calcular solo sobre exámenes aprobados (nota >= 4)', () => {
+      // Aprobadas: 8 + 4 + 10 = 22 / 3 = 7.33
+      assert.strictEqual(calcularPromedio(examenes, { soloAprobados: true }), 7.33)
+    })
+
+    it('calcularPromedio devuelve 0 de forma segura si no hay exámenes con nota', () => {
+      assert.strictEqual(calcularPromedio([]), 0)
+      assert.strictEqual(calcularPromedio(null), 0)
+      assert.strictEqual(calcularPromedio([{ nota: null }, { nota: undefined }]), 0)
+    })
+
+    it('calcularMetricasExamenes consolida totales, rendidos, aprobados y promedios', () => {
+      const metricas = calcularMetricasExamenes(examenes)
+      assert.strictEqual(metricas.total, 5)
+      assert.strictEqual(metricas.rendidos, 4)
+      assert.strictEqual(metricas.aprobados, 3)
+      assert.strictEqual(metricas.promedioGeneral, 6.0)
+      assert.strictEqual(metricas.promedioAprobados, 7.33)
     })
   })
 })
