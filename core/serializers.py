@@ -7,13 +7,19 @@ class FacultadSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class MateriaSerializer(serializers.ModelSerializer):
-    año_dictado = serializers.IntegerField(min_value=1900, max_value=2100)
     creditos_totales = serializers.IntegerField(min_value=0)
 
     class Meta:
         model = Materia
         fields = '__all__'
         read_only_fields = ['usuario']
+
+    def validate_año_dictado(self, value):
+        if value is None or not ((1 <= value <= 10) or (1900 <= value <= 2100)):
+            raise serializers.ValidationError(
+                "El año debe ser el nivel de la carrera (1 a 10) o un año calendario entre 1900 y 2100."
+            )
+        return value
 
 class ExamenSerializer(serializers.ModelSerializer):
     class Meta:

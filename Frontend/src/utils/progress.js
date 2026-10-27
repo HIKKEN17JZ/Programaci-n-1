@@ -44,6 +44,33 @@ export const ESTADO_LABEL = {
   REC: 'Recursando',
 }
 
+export const NIVELES_CARRERA = {
+  1: '1er Año',
+  2: '2do Año',
+  3: '3er Año',
+  4: '4to Año',
+  5: '5to Año',
+  6: '6to Año',
+}
+
+/**
+ * Formatea el nivel curricular de la materia en la carrera (ej: "1er Año", "2do Año").
+ * Si es un año calendario histórico (>= 1900), devuelve el año sin romper la visualización.
+ * @param {number|string} año
+ * @returns {string}
+ */
+export function formatearNivelCarrera(año) {
+  const num = Number(año)
+  if (isNaN(num) || num <= 0) return 'Sin especificar'
+  if (NIVELES_CARRERA[num]) {
+    return NIVELES_CARRERA[num]
+  }
+  if (num <= 10) {
+    return `${num}° Año`
+  }
+  return `${num}`
+}
+
 /**
  * Normaliza y devuelve la etiqueta legible para un estado de materia.
  *

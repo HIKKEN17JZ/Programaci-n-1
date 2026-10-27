@@ -22,10 +22,10 @@ export function validarFormularioMateria(datos = {}) {
     errores.nombre = 'El nombre no puede superar los 150 caracteres.'
   }
 
-  // Validación de año de dictado (1900 a 2100 según serializer de Django)
+  // Validación de año (1 a 10 para nivel de carrera, o 1900 a 2100 para año calendario)
   const año = Number(datos.año_dictado)
-  if (isNaN(año) || año < 1900 || año > 2100) {
-    errores.año_dictado = 'El año de cursada debe ser un año válido entre 1900 y 2100.'
+  if (isNaN(año) || !((año >= 1 && año <= 10) || (año >= 1900 && año <= 2100))) {
+    errores.año_dictado = 'El año de la materia debe ser el nivel de carrera (1 a 10) o un año válido.'
   }
 
   // Validación de créditos totales

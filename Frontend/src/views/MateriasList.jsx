@@ -6,6 +6,7 @@ import { canManageMaterias } from '../utils/roles.js'
 import {
   ESTADO_BADGE,
   obtenerEtiquetaEstado,
+  formatearNivelCarrera,
 } from '../utils/progress.js'
 import {
   filtrarMaterias,
@@ -14,6 +15,13 @@ import {
 } from '../utils/materiaFilters.js'
 import MateriaModal from '../components/MateriaModal.jsx'
 import ConfirmModal from '../components/ConfirmModal.jsx'
+import { ImportarPlanModal } from '../components/ImportarPlanModal.jsx'
+import { QuickStatusSelect } from '../components/QuickStatusSelect.jsx'
+import {
+  generarPlantillaCSV,
+  exportarMateriasACSV,
+  descargarArchivoCSV,
+} from '../utils/csvHelper.js'
 
 function MateriasList() {
   const { user } = useAuth()
@@ -25,11 +33,12 @@ function MateriasList() {
   const [filtroAño, setFiltroAño] = useState('TODOS')
   const [recarga, setRecarga] = useState(0)
 
-  // Estados para modales de creación, edición y eliminación
+  // Estados para modales de creación, edición, eliminación e importación
   const [materiaModalOpen, setMateriaModalOpen] = useState(false)
   const [materiaSeleccionada, setMateriaSeleccionada] = useState(null)
   const [confirmModalOpen, setConfirmModalOpen] = useState(false)
   const [materiaAEliminar, setMateriaAEliminar] = useState(null)
+  const [importarModalOpen, setImportarModalOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [feedback, setFeedback] = useState(null)
 
@@ -131,6 +140,30 @@ function MateriasList() {
     setRecarga((prev) => prev + 1)
   }
 
+  const handleDescargarPlantilla = () => {
+    const csv = generarPlantillaCSV()
+    descargarArchivoCSV(csv, 'plantilla_plan_estudio.csv')
+  }
+
+  const handleExportarPlan = () => {
+    const csv = exportarMateriasACSV(materias)
+    descargarArchivoCSV(csv, 'mi_plan_de_estudio.csv')
+    setFeedback({
+      tipo: 'info',
+      mensaje: `Plan de estudio exportado exitosamente con ${materias.length} materias.`,
+    })
+  }
+
+  const handleEstadoActualizado = (materiaActualizada) => {
+    setMaterias((prev) =>
+      prev.map((m) => (m.id === materiaActualizada.id ? materiaActualizada : m))
+    )
+    setFeedback({
+      tipo: 'success',
+      mensaje: `Condición de "${materiaActualizada.nombre}" actualizada a "${obtenerEtiquetaEstado(materiaActualizada.estado)}".`,
+    })
+  }
+
   return (
     <main className="flex-grow-1 pb-5">
       {/* Hero Banner compacto y consistente */}
@@ -164,7 +197,7 @@ function MateriasList() {
         )}
 
         {/* Barra superior de navegación y acciones */}
-        <div className="d-flex justify-content-between align-items-center mb-3">
+        <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
           <nav aria-label="breadcrumb">
             <ol className="breadcrumb mb-0">
               <li className="breadcrumb-item"><Link to="/">Inicio</Link></li>
@@ -173,13 +206,40 @@ function MateriasList() {
           </nav>
 
           {puedeGestionar && (
-            <button
-              type="button"
-              className="btn btn-primary btn-sm fw-semibold shadow-sm"
-              onClick={handleAbrirCrear}
-            >
-              + Nueva Materia
-            </button>
+            <div className="d-flex flex-wrap gap-2">
+              <button
+                type="button"
+                className="btn btn-outline-secondary btn-sm"
+                onClick={handleDescargarPlantilla}
+                title="Descargar plantilla CSV con ejemplos para completar en Excel"
+              >
+                📄 Plantilla CSV
+              </button>
+              <button
+                type="button"
+                className="btn btn-outline-primary btn-sm"
+                onClick={handleExportarPlan}
+                disabled={materias.length === 0}
+                title="Exportar todas las materias actuales a un archivo CSV"
+              >
+                📤 Exportar Plan
+              </button>
+              <button
+                type="button"
+                className="btn btn-outline-success btn-sm fw-semibold"
+                onClick={() => setImportarModalOpen(true)}
+                title="Cargar plan de materias completo desde archivo CSV / Excel"
+              >
+                📥 Importar CSV
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary btn-sm fw-semibold shadow-sm"
+                onClick={handleAbrirCrear}
+              >
+                + Nueva Materia
+              </button>
+            </div>
           )}
         </div>
 
@@ -267,7 +327,7 @@ function MateriasList() {
               {/* Filtro Año */}
               <div className="col-6 col-md-2">
                 <label htmlFor="filtro-año" className="form-label small fw-semibold text-secondary mb-1">
-                  Año cursada
+                  Año de carrera
                 </label>
                 <select
                   id="filtro-año"
@@ -278,7 +338,7 @@ function MateriasList() {
                   <option value="TODOS">Todos</option>
                   {añosDisponibles.map((año) => (
                     <option key={año} value={año}>
-                      {año}° Año
+                      {formatearNivelCarrera(año)}
                     </option>
                   ))}
                 </select>
@@ -373,16 +433,23 @@ function MateriasList() {
                           </td>
                           <td className="text-center">
                             <span className="badge text-bg-light border text-dark">
-                              {materia.año_dictado}° Año
+                              {formatearNivelCarrera(materia.año_dictado)}
                             </span>
                           </td>
                           <td className="text-center">
                             <span className="fw-medium">{materia.creditos_totales} pts</span>
                           </td>
                           <td className="text-center">
-                            <span className={`badge ${ESTADO_BADGE[materia.estado] || 'text-bg-secondary'}`}>
-                              {obtenerEtiquetaEstado(materia.estado)}
-                            </span>
+                            {puedeGestionar ? (
+                              <QuickStatusSelect
+                                materia={materia}
+                                onEstadoActualizado={handleEstadoActualizado}
+                              />
+                            ) : (
+                              <span className={`badge ${ESTADO_BADGE[materia.estado] || 'text-bg-secondary'}`}>
+                                {obtenerEtiquetaEstado(materia.estado)}
+                              </span>
+                            )}
                           </td>
                           <td className="text-center">
                             {materia.es_promocionable ? (
@@ -442,6 +509,19 @@ function MateriasList() {
           </>
         )}
       </div>
+
+      {/* Modal para Importación Masiva de Plan (CSV) */}
+      <ImportarPlanModal
+        isOpen={importarModalOpen}
+        onClose={() => setImportarModalOpen(false)}
+        onSuccess={(totalCreadas) => {
+          setFeedback({
+            tipo: 'success',
+            mensaje: `¡Se importaron ${totalCreadas} materias exitosamente a tu plan de estudio!`,
+          })
+          setRecarga((prev) => prev + 1)
+        }}
+      />
 
       {/* Modal para Crear y Editar Materia */}
       <MateriaModal

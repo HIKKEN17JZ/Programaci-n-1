@@ -6,6 +6,7 @@ import {
   SEMAFORO,
   ESTADO_BADGE,
   obtenerEtiquetaEstado,
+  formatearNivelCarrera,
   calcularCreditos,
   formatearMesaExamen,
   calcularPromedio,
@@ -98,6 +99,29 @@ describe('Utilidades de Progreso Académico', () => {
       assert.strictEqual(ESTADO_BADGE.CUR, 'text-bg-info')
       assert.strictEqual(ESTADO_BADGE.REC, 'text-bg-danger')
       assert.strictEqual(ESTADO_BADGE.Recursando, 'text-bg-danger')
+    })
+  })
+
+  describe('formatearNivelCarrera', () => {
+    it('formatea niveles de carrera a etiquetas legibles (1er Año, 2do Año, etc.)', () => {
+      assert.strictEqual(formatearNivelCarrera(1), '1er Año')
+      assert.strictEqual(formatearNivelCarrera('1'), '1er Año')
+      assert.strictEqual(formatearNivelCarrera(2), '2do Año')
+      assert.strictEqual(formatearNivelCarrera(3), '3er Año')
+      assert.strictEqual(formatearNivelCarrera(4), '4to Año')
+      assert.strictEqual(formatearNivelCarrera(5), '5to Año')
+      assert.strictEqual(formatearNivelCarrera(6), '6to Año')
+    })
+
+    it('conserva años calendario legados de 4 dígitos', () => {
+      assert.strictEqual(formatearNivelCarrera(2024), '2024')
+      assert.strictEqual(formatearNivelCarrera('2025'), '2025')
+    })
+
+    it('devuelve "Sin especificar" si el valor es nulo o inválido', () => {
+      assert.strictEqual(formatearNivelCarrera(null), 'Sin especificar')
+      assert.strictEqual(formatearNivelCarrera(0), 'Sin especificar')
+      assert.strictEqual(formatearNivelCarrera('abc'), 'Sin especificar')
     })
   })
 

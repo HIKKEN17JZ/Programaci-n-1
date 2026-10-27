@@ -238,6 +238,20 @@ class MateriaTests(BaseAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('año_dictado', response.data)
 
+    def test_create_materia_nivel_carrera(self):
+        """Año de dictado como nivel de carrera (ej: 1er año) es aceptado exitosamente."""
+        self.client.force_authenticate(user=self.estudiante)
+        payload = {
+            'nombre': 'Álgebra y Geometría',
+            'año_dictado': 1,
+            'creditos_totales': 6,
+            'estado': 'CUR',
+            'es_promocionable': True,
+        }
+        response = self.client.post('/api/materias/', payload)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['año_dictado'], 1)
+
     def test_validation_creditos_negativos(self):
         """Créditos totales negativos son rechazados con 400."""
         self.client.force_authenticate(user=self.docente1)

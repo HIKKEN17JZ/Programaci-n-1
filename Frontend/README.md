@@ -67,7 +67,9 @@ Frontend/src/
 │   ├── RoleProtectedRoute.jsx   # Guardián de rutas con validación RBAC (Role-Based Access Control)
 │   ├── MateriaModal.jsx         # Modal interactivo para Crear y Editar Asignaturas
 │   ├── ExamenModal.jsx          # Modal interactivo para Registrar y Calificar Exámenes
-│   └── ConfirmModal.jsx         # Modal reutilizable de confirmación para eliminaciones seguras
+│   ├── ConfirmModal.jsx         # Modal reutilizable de confirmación para eliminaciones seguras
+│   ├── ImportarPlanModal.jsx    # Modal de importación masiva de materias desde CSV / Excel
+│   └── QuickStatusSelect.jsx    # Selector rápido para actualizar la condición académica con 1 clic
 ├── contexts/
 │   └── AuthContext.jsx          # Contexto de autenticación conectado con JWT y sesión persistente
 ├── hooks/
@@ -79,6 +81,7 @@ Frontend/src/
 │   └── academicService.js       # CRUD completo contra /api/materias/, /api/examenes/ y /api/facultades/
 ├── utils/
 │   ├── academicValidators.js    # Validadores de formularios de materias y exámenes (TDD)
+│   ├── csvHelper.js             # Parser CSV tolerante, generador de plantillas y exportador (TDD)
 │   ├── materiaFilters.js        # Motor de búsqueda y filtrado de materias (TDD)
 │   ├── progress.js              # Cálculo de promedios, créditos y semáforo visual (TDD)
 │   ├── roles.js                 # Constantes y permisos de usuario RBAC (TDD)
@@ -122,7 +125,7 @@ El diseño se adhiere de forma estricta a la paleta cálida institucional de la 
 
 ## 🧪 Pruebas Unitarias y Calidad (TDD)
 
-El proyecto cuenta con **116 pruebas unitarias automatizadas** que cubren el 100% de la lógica de negocio, validaciones y servicios HTTP:
+El proyecto cuenta con **136 pruebas unitarias automatizadas** que cubren el 100% de la lógica de negocio, validaciones y servicios HTTP:
 
 ```bash
 npm test
@@ -130,11 +133,12 @@ npm test
 
 ### Cobertura de pruebas:
 - **`academicService.test.js`**: Operaciones CRUD para materias, exámenes y facultades con respuestas paginadas.
-- **`academicValidators.test.js`**: Validaciones de formularios de materias y actas de exámenes.
+- **`academicValidators.test.js`**: Validaciones de formularios de materias y actas de exámenes (soporte de 1° a 6° año de carrera).
 - **`apiClient.test.js`**: Manejo de Bearer tokens, serialización JSON y normalización de errores de Django REST Framework.
 - **`authService.test.js`**: Flujos de login, renovación de token ante 401, registro y logout resiliente.
-- **`materiaFilters.test.js`**: Buscador en tiempo real y filtros combinados.
-- **`progress.test.js`**: Fórmulas de avance curricular, promedios con y sin aplazos, y semáforo.
+- **`csvHelper.test.js`**: Parser tolerante a fallos, generación de plantillas UTF-8 con BOM y exportación a CSV.
+- **`materiaFilters.test.js`**: Buscador en tiempo real y filtros combinados por año de carrera.
+- **`progress.test.js`**: Fórmulas de avance curricular, niveles de carrera (1er a 6to año), promedios con y sin aplazos, y semáforo.
 - **`roles.test.js`**: Jerarquía de permisos RBAC para estudiantes, docentes y administradores.
 - **`routeGuards.test.js`**: Control de acceso a rutas protegidas y generación de mensajes de error.
 - **`tokenStorage.test.js`**: Persistencia y ciclo de vida de tokens JWT.

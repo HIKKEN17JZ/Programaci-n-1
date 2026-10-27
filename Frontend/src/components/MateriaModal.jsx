@@ -6,7 +6,7 @@ import { ESTADO_BADGE, obtenerEtiquetaEstado } from '../utils/progress.js'
 function MateriaModalForm({ materiaAEditar, onClose, onSuccess }) {
   const [nombre, setNombre] = useState(materiaAEditar?.nombre || '')
   const [añoDictado, setAñoDictado] = useState(
-    materiaAEditar?.año_dictado || new Date().getFullYear()
+    materiaAEditar?.año_dictado ?? 1
   )
   const [creditos, setCreditos] = useState(materiaAEditar?.creditos_totales ?? 6)
   const [estado, setEstado] = useState(materiaAEditar?.estado || 'PEN')
@@ -109,22 +109,29 @@ function MateriaModalForm({ materiaAEditar, onClose, onSuccess }) {
               </div>
 
               <div className="row g-3 mb-3">
-                {/* Año de dictado */}
+                {/* Año / Nivel de carrera */}
                 <div className="col-12 col-sm-6">
                   <label htmlFor="materiaAño" className="form-label fw-semibold small">
-                    Año de Cursada *
+                    Año de la Carrera *
                   </label>
-                  <input
+                  <select
                     id="materiaAño"
-                    type="number"
-                    className={`form-control ${errores.año_dictado ? 'is-invalid' : ''}`}
+                    className={`form-select ${errores.año_dictado ? 'is-invalid' : ''}`}
                     value={añoDictado}
-                    onChange={(e) => setAñoDictado(e.target.value)}
-                    min={1900}
-                    max={2100}
+                    onChange={(e) => setAñoDictado(Number(e.target.value))}
                     disabled={loading}
                     required
-                  />
+                  >
+                    <option value={1}>1er Año (1°)</option>
+                    <option value={2}>2do Año (2°)</option>
+                    <option value={3}>3er Año (3°)</option>
+                    <option value={4}>4to Año (4°)</option>
+                    <option value={5}>5to Año (5°)</option>
+                    <option value={6}>6to Año (6°)</option>
+                    {Number(añoDictado) >= 1900 && (
+                      <option value={añoDictado}>Año {añoDictado}</option>
+                    )}
+                  </select>
                   {errores.año_dictado && (
                     <div className="invalid-feedback">{errores.año_dictado}</div>
                   )}

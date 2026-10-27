@@ -8,6 +8,7 @@ import {
   obtenerEtiquetaEstado,
   TIPO_EXAMEN_LABEL,
   calcularPromedio,
+  formatearNivelCarrera,
 } from '../utils/progress.js'
 import MateriaModal from '../components/MateriaModal.jsx'
 import ExamenModal from '../components/ExamenModal.jsx'
@@ -152,7 +153,7 @@ function MateriaDetail() {
           <h1 className="h3 fw-bold mb-1">{materia ? materia.nombre : 'Detalle de Materia'}</h1>
           <p className="small text-white-50 mx-auto mb-0" style={{ maxWidth: '580px' }}>
             {materia
-              ? `Plan de Estudio • ${materia.año_dictado}° Año • ${materia.creditos_totales} créditos académicos`
+              ? `Plan de Estudio • ${formatearNivelCarrera(materia.año_dictado)} • ${materia.creditos_totales} créditos académicos`
               : 'Información curricular e historial de evaluaciones en tiempo real.'}
           </p>
         </div>
@@ -269,8 +270,8 @@ function MateriaDetail() {
             <div className="row g-3 mb-4">
               <div className="col-12 col-sm-6 col-md-3">
                 <div className="card border-0 shadow-sm h-100 text-center py-3">
-                  <span className="text-secondary small mb-1">Año Lectivo</span>
-                  <span className="fs-4 fw-bold text-primary">{materia.año_dictado}° Año</span>
+                  <span className="text-secondary small mb-1">Año de Carrera</span>
+                  <span className="fs-4 fw-bold text-primary">{formatearNivelCarrera(materia.año_dictado)}</span>
                 </div>
               </div>
 

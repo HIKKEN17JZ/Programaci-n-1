@@ -37,10 +37,20 @@ describe('Validadores de Formularios Académicos (TDD - TP9 - Bloque 4)', () => 
       assert.match(res.errores.nombre, /150 caracteres/i)
     })
 
-    it('rechaza años de dictado fuera del rango [1900, 2100] o no numéricos', () => {
+    it('acepta niveles de carrera de 1 a 6 como año válido', () => {
+      const resNivel1 = validarFormularioMateria({ ...materiaValida, año_dictado: 1 })
+      assert.strictEqual(resNivel1.esValido, true)
+      const resNivel3 = validarFormularioMateria({ ...materiaValida, año_dictado: 3 })
+      assert.strictEqual(resNivel3.esValido, true)
+    })
+
+    it('rechaza años fuera de los rangos válidos (1 a 10 y 1900 a 2100) o no numéricos', () => {
+      const resCero = validarFormularioMateria({ ...materiaValida, año_dictado: 0 })
+      assert.strictEqual(resCero.esValido, false)
+      assert.match(resCero.errores.año_dictado, /año/i)
+
       const resMenor = validarFormularioMateria({ ...materiaValida, año_dictado: 1899 })
       assert.strictEqual(resMenor.esValido, false)
-      assert.match(resMenor.errores.año_dictado, /año/i)
 
       const resMayor = validarFormularioMateria({ ...materiaValida, año_dictado: 2101 })
       assert.strictEqual(resMayor.esValido, false)
