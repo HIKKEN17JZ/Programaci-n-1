@@ -1,0 +1,354 @@
+import { useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { academicService } from '../services/academicService.js'
+import { useAuth } from '../hooks/useAuth.js'
+import { canManageMaterias } from '../utils/roles.js'
+import {
+  ESTADO_BADGE,
+  obtenerEtiquetaEstado,
+} from '../utils/progress.js'
+import {
+  filtrarMaterias,
+  obtenerAñosDisponibles,
+  calcularEstadisticasMaterias,
+} from '../utils/materiaFilters.js'
+
+function MateriasList() {
+  const { user } = useAuth()
+  const [materias, setMaterias] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [busqueda, setBusqueda] = useState('')
+  const [filtroEstado, setFiltroEstado] = useState('TODOS')
+  const [filtroAño, setFiltroAño] = useState('TODOS')
+  const [recarga, setRecarga] = useState(0)
+
+  useEffect(() => {
+    let isMounted = true
+
+    academicService
+      .getMaterias()
+      .then((data) => {
+        if (isMounted) {
+          setMaterias(data)
+        }
+      })
+      .catch((err) => {
+        if (isMounted) {
+          setError(err?.message || 'Error al conectar con el servidor para obtener las materias.')
+        }
+      })
+      .finally(() => {
+        if (isMounted) {
+          setLoading(false)
+        }
+      })
+
+    return () => {
+      isMounted = false
+    }
+  }, [recarga])
+
+  const añosDisponibles = useMemo(() => obtenerAñosDisponibles(materias), [materias])
+  const estadisticas = useMemo(() => calcularEstadisticasMaterias(materias), [materias])
+
+  const materiasFiltradas = useMemo(() => {
+    return filtrarMaterias(materias, {
+      busqueda,
+      estado: filtroEstado,
+      año: filtroAño,
+    })
+  }, [materias, busqueda, filtroEstado, filtroAño])
+
+  const handleLimpiarFiltros = () => {
+    setBusqueda('')
+    setFiltroEstado('TODOS')
+    setFiltroAño('TODOS')
+  }
+
+  const handleReintentar = () => {
+    setLoading(true)
+    setError('')
+    setRecarga((prev) => prev + 1)
+  }
+
+  const tieneFiltrosActivos = busqueda.trim() !== '' || filtroEstado !== 'TODOS' || filtroAño !== 'TODOS'
+  const puedeGestionar = canManageMaterias(user)
+
+  return (
+    <main className="flex-grow-1 pb-5">
+      {/* Hero Banner compacto y consistente */}
+      <section className="bg-primary text-white text-center py-3 py-md-4 mb-3 shadow-sm">
+        <div className="container">
+          <span className="badge rounded-pill text-bg-light text-primary mb-2">
+            Plan de Estudio Oficial
+          </span>
+          <h1 className="h3 fw-bold mb-1">Catálogo de Materias</h1>
+          <p className="small text-white-50 mx-auto mb-0" style={{ maxWidth: '580px' }}>
+            Seguimiento curricular, estado de cursada y acreditación de horas académicas en tiempo real.
+          </p>
+        </div>
+      </section>
+
+      <div className="container">
+        {/* Barra superior de navegación y acciones */}
+        <div className="d-flex justify-content-between align-items-center mb-3">
+          <nav aria-label="breadcrumb">
+            <ol className="breadcrumb mb-0">
+              <li className="breadcrumb-item"><Link to="/">Inicio</Link></li>
+              <li className="breadcrumb-item active" aria-current="page">Plan de Estudio</li>
+            </ol>
+          </nav>
+
+          {puedeGestionar && (
+            <button
+              type="button"
+              className="btn btn-primary btn-sm"
+              onClick={() => alert('La creación de materias estará activa en el Bloque 4.')}
+            >
+              + Nueva Materia
+            </button>
+          )}
+        </div>
+
+        {/* Tarjetas de Métricas Rápidas */}
+        {!loading && !error && materias.length > 0 && (
+          <div className="row g-2 mb-4">
+            <div className="col-6 col-md-3">
+              <div className="card border-0 bg-light shadow-sm text-center py-2">
+                <span className="fs-5 fw-bold text-primary">{estadisticas.total}</span>
+                <span className="text-secondary small">Total materias</span>
+              </div>
+            </div>
+            <div className="col-6 col-md-3">
+              <div className="card border-0 bg-light shadow-sm text-center py-2">
+                <span className="fs-5 fw-bold text-success">{estadisticas.aprobadas}</span>
+                <span className="text-secondary small">Aprobadas ({estadisticas.creditosAprobados} pts)</span>
+              </div>
+            </div>
+            <div className="col-6 col-md-3">
+              <div className="card border-0 bg-light shadow-sm text-center py-2">
+                <span className="fs-5 fw-bold text-info">{estadisticas.cursando}</span>
+                <span className="text-secondary small">Cursando actualmente</span>
+              </div>
+            </div>
+            <div className="col-6 col-md-3">
+              <div className="card border-0 bg-light shadow-sm text-center py-2">
+                <span className="fs-5 fw-bold text-warning">{estadisticas.regulares}</span>
+                <span className="text-secondary small">Regulares</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Barra de Filtros y Búsqueda */}
+        <div className="card border-0 shadow-sm mb-4">
+          <div className="card-body">
+            <div className="row g-3 align-items-center">
+              {/* Buscador */}
+              <div className="col-12 col-md-5">
+                <label htmlFor="busqueda-materia" className="form-label small fw-semibold text-secondary mb-1">
+                  Buscar por nombre
+                </label>
+                <div className="input-group">
+                  <input
+                    id="busqueda-materia"
+                    type="text"
+                    className="form-control"
+                    placeholder="Ej. Programación, Álgebra, Redes..."
+                    value={busqueda}
+                    onChange={(e) => setBusqueda(e.target.value)}
+                  />
+                  {busqueda && (
+                    <button
+                      type="button"
+                      className="btn btn-outline-secondary"
+                      onClick={() => setBusqueda('')}
+                      title="Limpiar búsqueda"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Filtro Estado */}
+              <div className="col-6 col-md-3">
+                <label htmlFor="filtro-estado" className="form-label small fw-semibold text-secondary mb-1">
+                  Estado
+                </label>
+                <select
+                  id="filtro-estado"
+                  className="form-select"
+                  value={filtroEstado}
+                  onChange={(e) => setFiltroEstado(e.target.value)}
+                >
+                  <option value="TODOS">Todos los estados</option>
+                  <option value="APR">Aprobadas (APR)</option>
+                  <option value="CUR">Cursando (CUR)</option>
+                  <option value="REG">Regulares (REG)</option>
+                  <option value="PEN">Pendientes (PEN)</option>
+                  <option value="REC">Recursando (REC)</option>
+                </select>
+              </div>
+
+              {/* Filtro Año */}
+              <div className="col-6 col-md-2">
+                <label htmlFor="filtro-año" className="form-label small fw-semibold text-secondary mb-1">
+                  Año cursada
+                </label>
+                <select
+                  id="filtro-año"
+                  className="form-select"
+                  value={filtroAño}
+                  onChange={(e) => setFiltroAño(e.target.value)}
+                >
+                  <option value="TODOS">Todos</option>
+                  {añosDisponibles.map((año) => (
+                    <option key={año} value={año}>
+                      {año}° Año
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Botón limpiar filtros */}
+              <div className="col-12 col-md-2 d-flex align-items-end pt-md-4">
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary w-100"
+                  onClick={handleLimpiarFiltros}
+                  disabled={!tieneFiltrosActivos}
+                >
+                  Limpiar filtros
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Manejo de Error */}
+        {error && (
+          <div className="alert alert-danger d-flex align-items-center justify-content-between shadow-sm" role="alert">
+            <div>
+              <strong>Error al cargar materias:</strong> {error}
+            </div>
+            <button type="button" className="btn btn-outline-danger btn-sm" onClick={handleReintentar}>
+              Reintentar
+            </button>
+          </div>
+        )}
+
+        {/* Indicador de Carga */}
+        {loading && (
+          <div className="text-center py-5">
+            <div className="spinner-border text-primary" role="status">
+              <span className="visually-hidden">Cargando materias...</span>
+            </div>
+            <p className="text-secondary small mt-2">Consultando el plan de estudio en el servidor...</p>
+          </div>
+        )}
+
+        {/* Contenido / Listado */}
+        {!loading && !error && (
+          <>
+            {materias.length === 0 ? (
+              <div className="card border-0 shadow-sm text-center py-5 px-3">
+                <div className="card-body">
+                  <span className="display-4 text-muted mb-3 d-inline-block">📚</span>
+                  <h3 className="h4 fw-bold">No hay materias registradas</h3>
+                  <p className="text-secondary mx-auto" style={{ maxWidth: '480px' }}>
+                    Aún no tienes materias vinculadas a tu cuenta de usuario en la API.
+                  </p>
+                  <Link to="/" className="btn btn-primary mt-2">
+                    Volver al Panel Principal
+                  </Link>
+                </div>
+              </div>
+            ) : materiasFiltradas.length === 0 ? (
+              <div className="card border-0 shadow-sm text-center py-5 px-3">
+                <div className="card-body">
+                  <span className="display-5 text-muted mb-2 d-inline-block">🔍</span>
+                  <h4 className="fw-semibold">Sin coincidencias</h4>
+                  <p className="text-secondary mx-auto mb-3" style={{ maxWidth: '420px' }}>
+                    No se encontraron materias que cumplan con los filtros de búsqueda aplicados.
+                  </p>
+                  <button type="button" className="btn btn-outline-primary" onClick={handleLimpiarFiltros}>
+                    Restablecer filtros
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="card border-0 shadow-sm overflow-hidden">
+                <div className="table-responsive">
+                  <table className="table table-hover align-middle mb-0">
+                    <thead className="table-light">
+                      <tr>
+                        <th scope="col" style={{ width: '40%' }}>Materia</th>
+                        <th scope="col" className="text-center">Año</th>
+                        <th scope="col" className="text-center">Créditos</th>
+                        <th scope="col" className="text-center">Condición</th>
+                        <th scope="col" className="text-center">Promocionable</th>
+                        <th scope="col" className="text-end">Acción</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {materiasFiltradas.map((materia) => (
+                        <tr key={materia.id}>
+                          <td>
+                            <div className="fw-semibold text-dark">{materia.nombre}</div>
+                            <span className="text-muted small">ID: #{materia.id}</span>
+                          </td>
+                          <td className="text-center">
+                            <span className="badge text-bg-light border text-dark">
+                              {materia.año_dictado}° Año
+                            </span>
+                          </td>
+                          <td className="text-center">
+                            <span className="fw-medium">{materia.creditos_totales} pts</span>
+                          </td>
+                          <td className="text-center">
+                            <span className={`badge ${ESTADO_BADGE[materia.estado] || 'text-bg-secondary'}`}>
+                              {obtenerEtiquetaEstado(materia.estado)}
+                            </span>
+                          </td>
+                          <td className="text-center">
+                            {materia.es_promocionable ? (
+                              <span className="badge text-bg-success-subtle text-success border border-success-subtle">
+                                Sí
+                              </span>
+                            ) : (
+                              <span className="badge text-bg-secondary-subtle text-secondary border border-secondary-subtle">
+                                No
+                              </span>
+                            )}
+                          </td>
+                          <td className="text-end">
+                            <Link
+                              to={`/materias/${materia.id}`}
+                              className="btn btn-outline-primary btn-sm"
+                            >
+                              Ver Detalle →
+                            </Link>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="card-footer bg-light text-secondary small py-2 d-flex justify-content-between align-items-center">
+                  <span>Mostrando {materiasFiltradas.length} de {materias.length} materias</span>
+                  {tieneFiltrosActivos && (
+                    <span className="badge text-bg-info">Filtros aplicados</span>
+                  )}
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </main>
+  )
+}
+
+export default MateriasList

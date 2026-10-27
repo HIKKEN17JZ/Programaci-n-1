@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom'
+
 function MesasExamenCard({ mesas }) {
   return (
     <div id="mesas-examen" className="col-12 col-md-4 mb-4">
@@ -18,9 +20,9 @@ function MesasExamenCard({ mesas }) {
               ))}
             </ul>
           )}
-          <a href="#" className="btn btn-outline-primary btn-sm mt-auto" onClick={(e) => e.preventDefault()}>
+          <Link to="/examenes" className="btn btn-outline-primary btn-sm mt-auto">
             Ver más
-          </a>
+          </Link>
         </div>
       </div>
     </div>

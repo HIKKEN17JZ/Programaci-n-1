@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { ESTADO_BADGE, obtenerEtiquetaEstado } from '../utils/progress.js'
 
 function PlanEstudioCard({ materias }) {
@@ -20,9 +21,9 @@ function PlanEstudioCard({ materias }) {
               ))}
             </ul>
           )}
-          <a href="#" className="btn btn-outline-primary btn-sm mt-auto" onClick={(e) => e.preventDefault()}>
+          <Link to="/materias" className="btn btn-outline-primary btn-sm mt-auto">
             Ver más
-          </a>
+          </Link>
         </div>
       </div>
     </div>

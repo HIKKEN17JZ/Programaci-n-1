@@ -53,22 +53,22 @@ function Home() {
 
   return (
     <main className="flex-grow-1">
-      <section className="bg-primary text-white text-center py-5">
+      <section className="bg-primary text-white text-center py-3 py-md-4 shadow-sm">
         <div className="container">
-          <span className="badge rounded-pill text-bg-light text-primary mb-3">
+          <span className="badge rounded-pill text-bg-light text-primary mb-2">
             Seguimiento académico
           </span>
-          <h1 className="display-4 fw-bold">
+          <h1 className="h3 fw-bold mb-1">
             {user ? `¡Hola, ${user.username}!` : 'Plataforma de Gestión de Carrera'}
           </h1>
-          <p className="lead mx-auto" style={{ maxWidth: '640px' }}>
+          <p className="small text-white-50 mx-auto mb-2" style={{ maxWidth: '580px' }}>
             {planNombre}. Plan de estudio, mesas de examen y progreso académico en tiempo real.
           </p>
           <div className="d-flex flex-column flex-sm-row gap-2 justify-content-center">
-            <a href="#progreso-carrera" className="btn btn-light btn-lg px-4">
+            <a href="#progreso-carrera" className="btn btn-outline-light btn-sm px-3">
               Comenzá ahora
             </a>
-            <a href="#plan-estudio" className="btn btn-outline-light btn-lg px-4">
+            <a href="#plan-estudio" className="btn btn-outline-light btn-sm px-3">
               Ver características
             </a>
           </div>
@@ -125,7 +125,7 @@ function Home() {
               <div className="text-center mb-5">
                 <h2 className="fw-bold">Gestioná tu carrera en un solo lugar</h2>
                 <p className="text-secondary mx-auto" style={{ maxWidth: '560px' }}>
-                  Tu historial académico conectado a la API de Django.
+                  Tu historial académico, organizado y al día.
                 </p>
               </div>
 

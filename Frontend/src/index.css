@@ -37,3 +37,10 @@ body {
   border-color: rgba(192, 86, 33, 0.3) !important;
   outline: none;
 }
+
+.auth-diagonal-bg {
+  min-height: 100vh;
+  background: linear-gradient(to bottom right, #c05621 0%, #c05621 50%, #f4f6f8 50.1%, #f4f6f8 100%);
+  background-repeat: no-repeat;
+  background-size: cover;
+}
