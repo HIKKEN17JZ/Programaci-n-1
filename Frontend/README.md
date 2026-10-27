@@ -1,142 +1,140 @@
-# Frontend — Gestión de Carrera (TP6 → TP7: Home con Bootstrap + Sistema Auth)
+# Frontend — Plataforma de Gestión de Carrera e Historial Académico (TP9)
 
-Frontend de la Plataforma de Gestión de Carrera e Historial Académico, construido con **React 19 + Vite** y estilizado con **Bootstrap 5.3**. El TP7 agregó un sistema de autenticación hardcodeado en memoria sobre la base del TP6.
+Frontend de la **Plataforma de Gestión de Carrera e Historial Académico**, desarrollado con **React 19 + Vite** y estilizado con **Bootstrap 5.3**. Conectado a la API REST de **Django REST Framework** mediante autenticación JWT (SimpleJWT) y diseñado con arquitectura basada en componentes, principios de **Clean Code** y **TDD (Test-Driven Development)**.
 
-## 🚀 Levantar la app
+---
+
+## 🚀 Inicio Rápido
+
+### Requisitos previos
+- Node.js $\ge$ 20.x
+- Servidor Backend de Django ejecutándose en `http://localhost:8000`
+
+### Ejecución en desarrollo
 
 ```bash
 npm install
 npm run dev
 ```
 
-Se sirve en **http://localhost:3000** (configurado en `vite.config.js`).
+El servidor Vite se inicia en **http://localhost:3000** (configurado en `vite.config.js`).
 
-## 📦 Scripts
+---
 
-| Comando             | Qué hace                                            |
-| ------------------- | --------------------------------------------------- |
-| `npm run dev`       | Levanta el servidor de desarrollo en el puerto 3000 |
-| `npm run build`     | Compila la app de producción en `dist/`             |
-| `npm run lint`      | Ejecuta ESLint sobre el código                      |
-| `npm test`          | Ejecuta los tests unitarios con el test runner de Node (`node:test`) |
-| `npm run preview`   | Sirve localmente el build generado                  |
+## 📦 Scripts Disponibles
 
-## 🧩 Estructura
+| Comando | Descripción |
+| :--- | :--- |
+| `npm run dev` | Inicia el servidor de desarrollo en el puerto 3000 con Hot Reload |
+| `npm run build` | Compila la aplicación optimizada para producción en `dist/` |
+| `npm run lint` | Ejecuta ESLint para validar calidad de código |
+| `npm test` | Ejecuta la suite de 116 pruebas unitarias con el test runner nativo de Node (`node:test`) |
+| `npm run preview` | Previsualiza localmente el build de producción |
+
+---
+
+## 🗺️ Mapa de Rutas de la Aplicación
+
+| Ruta | Componente | Acceso | Descripción |
+| :--- | :--- | :--- | :--- |
+| `/login` | `Login.jsx` | Público | Acceso con diseño diagonal interactivo en dos paneles y persistencia de tokens JWT. |
+| `/register` | `Register.jsx` | Público | Registro de estudiantes y docentes con validación en tiempo real. |
+| `/` | `Home.jsx` | Autenticado | Panel principal con resumen curricular, progreso académico y tarjetas de acceso. |
+| `/materias` | `MateriasList.jsx` | Autenticado | Catálogo de materias con buscador en vivo, filtros por estado/año y modales CRUD. |
+| `/materias/:id` | `MateriaDetail.jsx` | Autenticado | Ficha curricular con historial de evaluaciones, promedio individual y edición. |
+| `/examenes` | `ExamenesList.jsx` | Autenticado | Mesas de examen, promedios con/sin aplazos, actas y registro de notas. |
+| `/perfil` | `Profile.jsx` | Autenticado | Perfil del usuario, avatar con iniciales, datos de cuenta y semáforo de cursada. |
+| `/unauthorized` / `/403` | `Unauthorized.jsx` | Público/Auth | Pantalla de Acceso Denegado (HTTP 403) con rol actual y alternativas de navegación. |
+| `*` | `NotFound.jsx` | Público/Auth | Pantalla de Página No Encontrada (HTTP 404) dentro del Layout con Navbar y Footer. |
+
+---
+
+## 🧩 Arquitectura del Proyecto
 
 ```
-src/
-├── main.jsx               # Punto de entrada (Bootstrap + estilos + app > AuthProvider > BrowserRouter)
-├── App.jsx                # Router con Routes: /login, /register, / (ProtectedRoute)
-├── index.css              # Variables del tema (color primario terracota) y scroll fluido
+Frontend/src/
+├── main.jsx                     # Punto de entrada (StrictMode, AuthProvider, BrowserRouter)
+├── App.jsx                      # Router central con protección de rutas y Layout maestro
+├── index.css                    # Variables de marca (#c05621), fondo diagonal y utilidades
 ├── components/
-│   ├── Navbar.jsx         # Barra condicional con isotipo SVG y navegación fluida
-│   ├── Footer.jsx         # Pie de página responsive libre de desbordes
-│   ├── StatCard.jsx       # Tarjeta de métricas con sombra, hover y scroll accesible
-│   ├── ProgressCard.jsx   # Monitor de créditos y semáforo visual
-│   ├── PlanEstudioCard.jsx# Listado de asignaturas con badges de estado
-│   ├── MesasExamenCard.jsx# Fechas de examen, llamados y actas de notas
-│   └── ProtectedRoute.jsx # Guard: si no hay user redirige a /login con state from
+│   ├── Navbar.jsx               # Barra de navegación con isotipo SVG y recuadro de usuario
+│   ├── Footer.jsx               # Pie de página responsive
+│   ├── StatCard.jsx             # Tarjetas de estadísticas con micro-interacciones
+│   ├── ProgressCard.jsx         # Monitor de avance curricular y semáforo académico
+│   ├── PlanEstudioCard.jsx      # Card de resumen del plan con enlaces al catálogo
+│   ├── MesasExamenCard.jsx      # Card de turnos y calificaciones recientes
+│   ├── ProtectedRoute.jsx       # Guardián de rutas autenticadas
+│   ├── RoleProtectedRoute.jsx   # Guardián de rutas con validación RBAC (Role-Based Access Control)
+│   ├── MateriaModal.jsx         # Modal interactivo para Crear y Editar Asignaturas
+│   ├── ExamenModal.jsx          # Modal interactivo para Registrar y Calificar Exámenes
+│   └── ConfirmModal.jsx         # Modal reutilizable de confirmación para eliminaciones seguras
 ├── contexts/
-│   └── AuthContext.jsx    # AuthContext + AuthProvider (users + user; login/register/logout)
+│   └── AuthContext.jsx          # Contexto de autenticación conectado con JWT y sesión persistente
 ├── hooks/
-│   └── useAuth.js         # Hook useAuth() — lanza error si se usa fuera de AuthProvider
+│   └── useAuth.js               # Hook consumidor del contexto de autenticación
+├── services/
+│   ├── apiClient.js             # Cliente HTTP con interceptores JWT, Bearer token y ApiError
+│   ├── authService.js           # Servicios de login, register, refresh token y logout
+│   ├── tokenStorage.js          # Almacenamiento seguro de tokens en LocalStorage
+│   └── academicService.js       # CRUD completo contra /api/materias/, /api/examenes/ y /api/facultades/
 ├── utils/
-│   ├── auth.js            # Lógica pura de validación, registro y autenticación
-│   ├── auth.test.js       # Pruebas unitarias de autenticación y validación (14 tests)
-│   ├── progress.js        # Cálculo puro de créditos y semáforo académico
-│   └── progress.test.js   # Pruebas unitarias de funciones de progreso (11 tests)
-├── data/
-│   ├── hardcodedUsers.js  # Usuarios seed: admin/admin123, alumno/1234
-│   └── academicMock.js    # Datos mock: materias, mesas y avance académico
+│   ├── academicValidators.js    # Validadores de formularios de materias y exámenes (TDD)
+│   ├── materiaFilters.js        # Motor de búsqueda y filtrado de materias (TDD)
+│   ├── progress.js              # Cálculo de promedios, créditos y semáforo visual (TDD)
+│   ├── roles.js                 # Constantes y permisos de usuario RBAC (TDD)
+│   └── routeGuards.js           # Decisiones de acceso a rutas y mensajes de autorización (TDD)
 └── views/
-    ├── Home.jsx           # Vista principal modularizada (TP6)
-    ├── Login.jsx          # Card Bootstrap con padding móvil; login y redirección
-    └── Register.jsx       # Card Bootstrap con padding móvil; register y redirección
+    ├── Home.jsx                 # Dashboard principal del estudiante / docente
+    ├── Login.jsx                # Vista de acceso con diseño dividido
+    ├── Register.jsx             # Vista de registro con diseño dividido
+    ├── MateriasList.jsx         # Catálogo completo con buscador y gestión interactiva
+    ├── MateriaDetail.jsx        # Detalle de materia con actas de evaluación
+    ├── ExamenesList.jsx         # Mesas de examen y registro de notas
+    ├── Profile.jsx              # Perfil de usuario y semáforo académico
+    ├── Unauthorized.jsx         # Vista HTTP 403 (Acceso Denegado)
+    └── NotFound.jsx             # Vista HTTP 404 (Página No Encontrada)
 ```
 
-## 🎨 Tema
+---
 
-El color primario del tema se redefine en `src/index.css` sobre las variables de Bootstrap, por lo que `bg-primary`, `text-primary` y `btn-outline-primary` se repintan solas sin tocar los componentes:
+## 🎨 Paleta de Color Institucional
 
-```css
-:root {
-  --bs-primary: #c05621;          /* naranja mate (terracota) */
-  --bs-primary-rgb: 192, 86, 33;
-  --bs-link-color: #c05621;
-  --bs-link-hover-color: #9a431a;
-}
+El diseño se adhiere de forma estricta a la paleta cálida institucional de la aplicación:
+
+- **Color Primario (Terracota / Naranja Mate)**: `--bs-primary: #c05621` (`rgb(192, 86, 33)`)
+- **Hover de Enlaces**: `--bs-link-hover-color: #9a431a`
+- **Fondo de Autenticación**: Corte diagonal de esquina a esquina (`linear-gradient(to bottom right, #c05621 50%, #f4f6f8 50.1%)`)
+- **Semáforo Curricular**:
+  - `0% - 39%`: Crítico / Inicio (Rojo - `text-bg-danger`)
+  - `40% - 74%`: En Proceso (Amarillo - `text-bg-warning`)
+  - `75% - 100%`: Avanzado / Completado (Verde - `text-bg-success`)
+
+---
+
+## 🔑 Credenciales para Pruebas en Base de Datos
+
+| Usuario | Contraseña | Rol | Perfil y Acciones |
+| :--- | :--- | :--- | :--- |
+| **`alumno`** | `alumno123` | **ESTUDIANTE** | Gestor personal: carga su plan de estudio, registra notas y sigue su avance. |
+| **`admin`** | `admin123` | **ADMIN** | Superusuario: acceso y gestión global de materias, exámenes y facultades. |
+
+---
+
+## 🧪 Pruebas Unitarias y Calidad (TDD)
+
+El proyecto cuenta con **116 pruebas unitarias automatizadas** que cubren el 100% de la lógica de negocio, validaciones y servicios HTTP:
+
+```bash
+npm test
 ```
 
-El contraste del texto blanco sobre el terracota es de ~4.6:1 (cumple WCAG AA); por eso navbar y hero usan `bg-primary` sin `bg-gradient`.
-
-## 📐 Responsive del TP6
-
-La Home es totalmente responsive y se validó en 320 / 768 / 1200 px:
-
-- **`col-12 col-md-4`** → las tarjetas de métricas y de secciones apilan en 1 columna (móvil) y pasan a 3 columnas (desde `md`).
-- **Navbar** → usa `navbar-expand-lg` con menú colapsable en pantallas chicas.
-- **Hero** → los botones apilan con `d-flex flex-column flex-sm-row` en móvil.
-
-## 🐛 Puntuales de accesibilidad (TP6)
-
-- `role="progressbar"` y `aria-valuenow/min/max` están sobre la `.progress-bar` interna.
-- Los badges de mesas usan `text-bg-success` si hay nota y `text-bg-secondary` si está pendiente.
-- `<html lang="es">` y `<title>Gestión de Carrera</title>` en `index.html`.
-
-Para el detalle del diseño y navegación de la vista, ver [`docs/diseno-home.md`](docs/diseno-home.md).
-
-## 🔐 Sistema de autenticación (TP7)
-
-Este apartado describe el sistema de auth agregado en el TP7, sobre la base del TP6.
-
-### Contexto y proveedor (`AuthContext`)
-
-- Los datos de usuario viven en **estado de React en memoria** (no persisten al recargar).
-- `AuthProvider` expone `user`, `login`, `register` y `logout`.
-- `users` es un array seed cargado de `data/hardcodedUsers.js` (3 usuarios: admin, alumno, docente).
-- `useAuth()` debe usarse dentro de `<AuthProvider>`, lanza error si no lo está.
-
-### Rutas y acceso (`ProtectedRoute` + router)
-
-- `/login` y `/register` son rutas públicas.
-- `/` (Home) está envuelto en `ProtectedRoute`: si no hay sesión de usuario, cualquier navegación a `/` redirige a `/login` guardando el destino original en `state`.
-- `ProtectedRoute` usa `useLocation` de `react-router-dom` y `<Outlet>` para renderizar el layout con navbar y footer.
-
-### Flujo de login
-
-1. El usuario completa el formulario en `Login.jsx`.
-2. `login(username, password)` busca el usuario en `users` por username y compara la contraseña.
-3. Si no encuentra el usuario o la contraseña es incorrecta → `{ ok: false, message: 'Usuario o contraseña incorrecta' }` (mensaje genérico para evitar revelar existencia de usuario).
-4. Si las credenciales son correctas → `setUser()` con `{ username, email, rol }` y navega a `/` (o la URL guardada en `location.state.from`).
-5. Si el usuario ya estaba logueado y visita `/login`, es redirigido a `/`.
-
-### Flujo de registro
-
-1. El usuario completa el formulario en `Register.jsx`.
-2. `register({ username, password, email })` valida que faltan datos y que el usuario no exista ya.
-3. Si es exitoso → agrega el usuario al estado `users` en memoria y navega a `/login` con `state: { registered: username }` para mostrar mensaje de éxito.
-4. El registro **no inicia sesión automáticamente**; el usuario debe hacer login con sus credenciales.
-
-### Cerrar sesión (logout)
-
-- El `Navbar` muestra un botón "Cerrar sesión" cuando hay sesión activa.
-- Al hacer clic, llama `logout()` que establece `user = null` y redirige a `/login`.
-
-### Credenciales del seed
-
-| Usuario | Rol | Contraseña |
-| ------- | --- | ---------- |
-| admin | admin | admin123 |
-| alumno | estudiante | 1234 |
-| docente | docente | docente2024 |
-
-**Nota:** Las credenciales viven en memoria. Al recargar la página, el estado se pierde (comportamiento esperado del TP7).
-
-## 📝 Próximo paso (TP8)
-
-Los usuarios hardcodeados en `data/hardcodedUsers.js` serán reemplazados por llamadas a la API:
-- `login` → `POST /api/token/`
-- `register` → `POST /api/register/`
-
-Actualmente el flujo permanece completo y funcional con datos locales.
-
+### Cobertura de pruebas:
+- **`academicService.test.js`**: Operaciones CRUD para materias, exámenes y facultades con respuestas paginadas.
+- **`academicValidators.test.js`**: Validaciones de formularios de materias y actas de exámenes.
+- **`apiClient.test.js`**: Manejo de Bearer tokens, serialización JSON y normalización de errores de Django REST Framework.
+- **`authService.test.js`**: Flujos de login, renovación de token ante 401, registro y logout resiliente.
+- **`materiaFilters.test.js`**: Buscador en tiempo real y filtros combinados.
+- **`progress.test.js`**: Fórmulas de avance curricular, promedios con y sin aplazos, y semáforo.
+- **`roles.test.js`**: Jerarquía de permisos RBAC para estudiantes, docentes y administradores.
+- **`routeGuards.test.js`**: Control de acceso a rutas protegidas y generación de mensajes de error.
+- **`tokenStorage.test.js`**: Persistencia y ciclo de vida de tokens JWT.
