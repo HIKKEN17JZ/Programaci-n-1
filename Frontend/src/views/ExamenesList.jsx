@@ -8,6 +8,8 @@ import {
   calcularMetricasExamenes,
   TIPO_EXAMEN_LABEL,
 } from '../utils/progress.js'
+import ExamenModal from '../components/ExamenModal.jsx'
+import ConfirmModal from '../components/ConfirmModal.jsx'
 
 function ExamenesList() {
   const { user } = useAuth()
@@ -19,6 +21,14 @@ function ExamenesList() {
   const [filtroTipo, setFiltroTipo] = useState('TODOS')
   const [filtroCondicion, setFiltroCondicion] = useState('TODOS')
   const [recarga, setRecarga] = useState(0)
+
+  // Estados para modales de creación, edición y eliminación de exámenes
+  const [examenModalOpen, setExamenModalOpen] = useState(false)
+  const [examenSeleccionado, setExamenSeleccionado] = useState(null)
+  const [confirmModalOpen, setConfirmModalOpen] = useState(false)
+  const [examenAEliminar, setExamenAEliminar] = useState(null)
+  const [deleting, setDeleting] = useState(false)
+  const [feedback, setFeedback] = useState(null)
 
   useEffect(() => {
     let isMounted = true
@@ -96,6 +106,52 @@ function ExamenesList() {
   const tieneFiltrosActivos = busqueda.trim() !== '' || filtroTipo !== 'TODOS' || filtroCondicion !== 'TODOS'
   const puedeGestionar = canManageExamenes(user)
 
+  const handleAbrirCrearExamen = () => {
+    setExamenSeleccionado(null)
+    setExamenModalOpen(true)
+  }
+
+  const handleAbrirEditarExamen = (ex) => {
+    setExamenSeleccionado(ex)
+    setExamenModalOpen(true)
+  }
+
+  const handleAbrirEliminarExamen = (ex) => {
+    setExamenAEliminar(ex)
+    setConfirmModalOpen(true)
+  }
+
+  const handleConfirmarEliminar = async () => {
+    if (!examenAEliminar) return
+    setDeleting(true)
+    try {
+      await academicService.deleteExamen(examenAEliminar.id)
+      setFeedback({
+        tipo: 'success',
+        mensaje: 'La mesa de examen fue eliminada correctamente del historial.',
+      })
+      setConfirmModalOpen(false)
+      setExamenAEliminar(null)
+      setRecarga((prev) => prev + 1)
+    } catch (err) {
+      setFeedback({
+        tipo: 'danger',
+        mensaje: err?.message || 'Error al eliminar el examen del servidor.',
+      })
+    } finally {
+      setDeleting(false)
+    }
+  }
+
+  const handleModalSuccess = (resultado, accion) => {
+    const accionTxt = accion === 'CREATE' ? 'registrado' : 'actualizado'
+    setFeedback({
+      tipo: 'success',
+      mensaje: `Examen ${accionTxt} exitosamente.`,
+    })
+    setRecarga((prev) => prev + 1)
+  }
+
   return (
     <main className="flex-grow-1 pb-5">
       {/* Hero Banner compacto y consistente */}
@@ -112,6 +168,22 @@ function ExamenesList() {
       </section>
 
       <div className="container">
+        {/* Mensaje de retroalimentación de operaciones CRUD */}
+        {feedback && (
+          <div
+            className={`alert alert-${feedback.tipo} alert-dismissible fade show d-flex align-items-center justify-content-between mb-3`}
+            role="alert"
+          >
+            <div>{feedback.mensaje}</div>
+            <button
+              type="button"
+              className="btn-close"
+              aria-label="Cerrar"
+              onClick={() => setFeedback(null)}
+            />
+          </div>
+        )}
+
         {/* Barra superior de navegación y acciones */}
         <div className="d-flex justify-content-between align-items-center mb-3">
           <nav aria-label="breadcrumb">
@@ -124,8 +196,8 @@ function ExamenesList() {
           {puedeGestionar && (
             <button
               type="button"
-              className="btn btn-primary btn-sm"
-              onClick={() => alert('El registro de nuevos exámenes estará activo en el Bloque 4.')}
+              className="btn btn-primary btn-sm fw-semibold shadow-sm"
+              onClick={handleAbrirCrearExamen}
             >
               + Registrar Examen
             </button>
@@ -347,16 +419,37 @@ function ExamenesList() {
                               )}
                             </td>
                             <td className="text-end">
-                              {ex.materia ? (
-                                <Link
-                                  to={`/materias/${ex.materia}`}
-                                  className="btn btn-outline-secondary btn-sm"
-                                >
-                                  Ver Detalle →
-                                </Link>
-                              ) : (
-                                <span className="text-muted small">—</span>
-                              )}
+                              <div className="d-inline-flex gap-1">
+                                {ex.materia && (
+                                  <Link
+                                    to={`/materias/${ex.materia}`}
+                                    className="btn btn-outline-secondary btn-sm"
+                                    title="Ver detalle de la materia"
+                                  >
+                                    Ver Detalle
+                                  </Link>
+                                )}
+                                {puedeGestionar && (
+                                  <>
+                                    <button
+                                      type="button"
+                                      className="btn btn-outline-primary btn-sm"
+                                      title="Editar o calificar examen"
+                                      onClick={() => handleAbrirEditarExamen(ex)}
+                                    >
+                                      ✏️
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className="btn btn-outline-danger btn-sm"
+                                      title="Eliminar examen"
+                                      onClick={() => handleAbrirEliminarExamen(ex)}
+                                    >
+                                      🗑️
+                                    </button>
+                                  </>
+                                )}
+                              </div>
                             </td>
                           </tr>
                         )
@@ -375,6 +468,30 @@ function ExamenesList() {
           </>
         )}
       </div>
+
+      {/* Modal para Crear y Editar Examen */}
+      <ExamenModal
+        isOpen={examenModalOpen}
+        examenAEditar={examenSeleccionado}
+        materias={materias}
+        onClose={() => setExamenModalOpen(false)}
+        onSuccess={handleModalSuccess}
+      />
+
+      {/* Modal para Confirmar Eliminación */}
+      <ConfirmModal
+        isOpen={confirmModalOpen}
+        titulo="Eliminar Examen"
+        mensaje="¿Estás seguro de que deseas eliminar permanentemente este registro de examen?"
+        confirmTexto="Sí, eliminar"
+        confirmClase="btn-danger"
+        loading={deleting}
+        onClose={() => {
+          setConfirmModalOpen(false)
+          setExamenAEliminar(null)
+        }}
+        onConfirm={handleConfirmarEliminar}
+      />
     </main>
   )
 }

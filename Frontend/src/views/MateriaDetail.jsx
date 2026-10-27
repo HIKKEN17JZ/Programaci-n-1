@@ -9,6 +9,9 @@ import {
   TIPO_EXAMEN_LABEL,
   calcularPromedio,
 } from '../utils/progress.js'
+import MateriaModal from '../components/MateriaModal.jsx'
+import ExamenModal from '../components/ExamenModal.jsx'
+import ConfirmModal from '../components/ConfirmModal.jsx'
 
 function MateriaDetail() {
   const { id } = useParams()
@@ -20,6 +23,16 @@ function MateriaDetail() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [recarga, setRecarga] = useState(0)
+
+  // Estados para modales de creación, edición y eliminación
+  const [materiaModalOpen, setMateriaModalOpen] = useState(false)
+  const [examenModalOpen, setExamenModalOpen] = useState(false)
+  const [examenSeleccionado, setExamenSeleccionado] = useState(null)
+  const [confirmDeleteMateriaOpen, setConfirmDeleteMateriaOpen] = useState(false)
+  const [confirmDeleteExamenOpen, setConfirmDeleteExamenOpen] = useState(false)
+  const [examenAEliminar, setExamenAEliminar] = useState(null)
+  const [deleting, setDeleting] = useState(false)
+  const [feedback, setFeedback] = useState(null)
 
   useEffect(() => {
     let isMounted = true
@@ -63,6 +76,71 @@ function MateriaDetail() {
   const puedeEditarMateria = canManageMaterias(user)
   const puedeRegistrarExamen = canManageExamenes(user)
 
+  const handleModalMateriaSuccess = (res) => {
+    setMateria(res)
+    setFeedback({ tipo: 'success', mensaje: 'Asignatura actualizada con éxito.' })
+    setRecarga((prev) => prev + 1)
+  }
+
+  const handleConfirmarEliminarMateria = async () => {
+    if (!materia) return
+    setDeleting(true)
+    try {
+      await academicService.deleteMateria(materia.id)
+      navigate('/materias', {
+        replace: true,
+        state: {
+          feedback: {
+            tipo: 'success',
+            mensaje: `La materia "${materia.nombre}" fue eliminada exitosamente.`,
+          },
+        },
+      })
+    } catch (err) {
+      setFeedback({ tipo: 'danger', mensaje: err?.message || 'Error al eliminar la materia.' })
+    } finally {
+      setDeleting(false)
+      setConfirmDeleteMateriaOpen(false)
+    }
+  }
+
+  const handleAbrirCrearExamen = () => {
+    setExamenSeleccionado(null)
+    setExamenModalOpen(true)
+  }
+
+  const handleAbrirEditarExamen = (ex) => {
+    setExamenSeleccionado(ex)
+    setExamenModalOpen(true)
+  }
+
+  const handleAbrirEliminarExamen = (ex) => {
+    setExamenAEliminar(ex)
+    setConfirmDeleteExamenOpen(true)
+  }
+
+  const handleConfirmarEliminarExamen = async () => {
+    if (!examenAEliminar) return
+    setDeleting(true)
+    try {
+      await academicService.deleteExamen(examenAEliminar.id)
+      setFeedback({ tipo: 'success', mensaje: 'Examen eliminado del historial correctamente.' })
+      setConfirmDeleteExamenOpen(false)
+      setExamenAEliminar(null)
+      setRecarga((prev) => prev + 1)
+    } catch (err) {
+      setFeedback({ tipo: 'danger', mensaje: err?.message || 'Error al eliminar el examen.' })
+    } finally {
+      setDeleting(false)
+    }
+  }
+
+  const handleModalExamenSuccess = (res, accion) => {
+    const accionTxt = accion === 'CREATE' ? 'registrado' : 'actualizado'
+    setFeedback({ tipo: 'success', mensaje: `Examen ${accionTxt} exitosamente.` })
+    setRecarga((prev) => prev + 1)
+  }
+
   return (
     <main className="flex-grow-1 pb-5">
       {/* Hero Banner compacto y consistente */}
@@ -81,6 +159,22 @@ function MateriaDetail() {
       </section>
 
       <div className="container">
+        {/* Mensaje de retroalimentación de operaciones CRUD */}
+        {feedback && (
+          <div
+            className={`alert alert-${feedback.tipo} alert-dismissible fade show d-flex align-items-center justify-content-between mb-3`}
+            role="alert"
+          >
+            <div>{feedback.mensaje}</div>
+            <button
+              type="button"
+              className="btn-close"
+              aria-label="Cerrar"
+              onClick={() => setFeedback(null)}
+            />
+          </div>
+        )}
+
         {/* Navegación de migas de pan y botones */}
         <div className="d-flex justify-content-between align-items-center mb-3">
           <nav aria-label="breadcrumb">
@@ -97,14 +191,23 @@ function MateriaDetail() {
             <Link to="/materias" className="btn btn-outline-secondary btn-sm">
               ← Volver a Materias
             </Link>
-            {puedeEditarMateria && (
-              <button
-                type="button"
-                className="btn btn-outline-primary btn-sm"
-                onClick={() => alert('La edición de materias estará disponible en el Bloque 4.')}
-              >
-                ✏️ Editar Materia
-              </button>
+            {puedeEditarMateria && materia && (
+              <>
+                <button
+                  type="button"
+                  className="btn btn-outline-primary btn-sm"
+                  onClick={() => setMateriaModalOpen(true)}
+                >
+                  ✏️ Editar Materia
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-outline-danger btn-sm"
+                  onClick={() => setConfirmDeleteMateriaOpen(true)}
+                >
+                  🗑️ Eliminar
+                </button>
+              </>
             )}
           </div>
         </div>
@@ -204,8 +307,8 @@ function MateriaDetail() {
                 {puedeRegistrarExamen && (
                   <button
                     type="button"
-                    className="btn btn-outline-primary btn-sm"
-                    onClick={() => alert('El registro de exámenes estará activo en el Bloque 4.')}
+                    className="btn btn-outline-primary btn-sm fw-semibold"
+                    onClick={handleAbrirCrearExamen}
                   >
                     + Cargar Nota / Examen
                   </button>
@@ -231,6 +334,7 @@ function MateriaDetail() {
                           <th scope="col">Fecha</th>
                           <th scope="col" className="text-center">Calificación</th>
                           <th scope="col" className="text-center">Resultado</th>
+                          {puedeRegistrarExamen && <th scope="col" className="text-end">Acción</th>}
                         </tr>
                       </thead>
                       <tbody>
@@ -247,7 +351,7 @@ function MateriaDetail() {
                               <td className="text-center">
                                 {notaNum !== null ? (
                                   <span className={`fw-bold fs-6 ${aprobado ? 'text-success' : 'text-danger'}`}>
-                                    {notaNum} / 20
+                                    {notaNum} / 10
                                   </span>
                                 ) : (
                                   <span className="text-muted fst-italic">Pendiente de nota</span>
@@ -262,6 +366,28 @@ function MateriaDetail() {
                                   <span className="badge text-bg-danger">Desaprobado</span>
                                 )}
                               </td>
+                              {puedeRegistrarExamen && (
+                                <td className="text-end">
+                                  <div className="d-inline-flex gap-1">
+                                    <button
+                                      type="button"
+                                      className="btn btn-outline-secondary btn-sm"
+                                      title="Editar o calificar examen"
+                                      onClick={() => handleAbrirEditarExamen(ex)}
+                                    >
+                                      ✏️
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className="btn btn-outline-danger btn-sm"
+                                      title="Eliminar examen"
+                                      onClick={() => handleAbrirEliminarExamen(ex)}
+                                    >
+                                      🗑️
+                                    </button>
+                                  </div>
+                                </td>
+                              )}
                             </tr>
                           )
                         })}
@@ -274,6 +400,53 @@ function MateriaDetail() {
           </>
         )}
       </div>
+
+      {/* Modal para Editar Asignatura */}
+      {materia && (
+        <MateriaModal
+          isOpen={materiaModalOpen}
+          materiaAEditar={materia}
+          onClose={() => setMateriaModalOpen(false)}
+          onSuccess={handleModalMateriaSuccess}
+        />
+      )}
+
+      {/* Modal para Confirmar Eliminación de la Materia */}
+      <ConfirmModal
+        isOpen={confirmDeleteMateriaOpen}
+        titulo="Eliminar Asignatura"
+        mensaje={`¿Estás seguro de que deseas eliminar la materia "${materia?.nombre}"? Esta acción no se puede deshacer.`}
+        confirmTexto="Sí, eliminar materia"
+        confirmClase="btn-danger"
+        loading={deleting}
+        onClose={() => setConfirmDeleteMateriaOpen(false)}
+        onConfirm={handleConfirmarEliminarMateria}
+      />
+
+      {/* Modal para Registrar / Editar Examen */}
+      <ExamenModal
+        isOpen={examenModalOpen}
+        examenAEditar={examenSeleccionado}
+        materias={materia ? [materia] : []}
+        materiaPreseleccionadaId={materia?.id}
+        onClose={() => setExamenModalOpen(false)}
+        onSuccess={handleModalExamenSuccess}
+      />
+
+      {/* Modal para Confirmar Eliminación de Examen */}
+      <ConfirmModal
+        isOpen={confirmDeleteExamenOpen}
+        titulo="Eliminar Examen"
+        mensaje="¿Estás seguro de que deseas eliminar este registro de examen del historial?"
+        confirmTexto="Sí, eliminar examen"
+        confirmClase="btn-danger"
+        loading={deleting}
+        onClose={() => {
+          setConfirmDeleteExamenOpen(false)
+          setExamenAEliminar(null)
+        }}
+        onConfirm={handleConfirmarEliminarExamen}
+      />
     </main>
   )
 }

@@ -16,12 +16,12 @@ class FacultadViewSet(viewsets.ModelViewSet):
 
 class MateriaViewSet(viewsets.ModelViewSet):
     """
-    CRUD de Materias.
+    CRUD de Materias (Gestor Personal y Curricular).
     - Lectura: cada usuario autenticado ve exclusivamente sus materias; ADMIN ve todas.
-    - Escritura: reservada a ADMIN y DOCENTE. La autoría se asigna automáticamente al creador.
+    - Escritura: usuarios autenticados gestionan su plan de estudio; la autoría se asigna al creador.
     """
     serializer_class = MateriaSerializer
-    permission_classes = [IsAdminOrDocente, IsOwnerOrReadOnly]
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
 
     def get_queryset(self):
         user = self.request.user
@@ -37,11 +37,11 @@ class MateriaViewSet(viewsets.ModelViewSet):
 class ExamenViewSet(viewsets.ModelViewSet):
     """
     CRUD de Exámenes.
-    - Lectura: usuarios acceden solo a exámenes de materias propias; ADMIN accede a todos.
-    - Creación: DOCENTE solo puede asociar exámenes a materias propias; ADMIN puede asociar a cualquier materia.
+    - Lectura: usuarios acceden a exámenes de materias propias; ADMIN accede a todos.
+    - Creación: usuarios pueden registrar y calificar exámenes de sus materias propias; ADMIN sobre cualquier materia.
     """
     serializer_class = ExamenSerializer
-    permission_classes = [IsAdminOrDocente, IsOwnerOrReadOnly]
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
 
     def get_queryset(self):
         user = self.request.user

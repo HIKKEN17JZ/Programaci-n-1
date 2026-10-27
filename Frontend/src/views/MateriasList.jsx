@@ -12,6 +12,8 @@ import {
   obtenerAñosDisponibles,
   calcularEstadisticasMaterias,
 } from '../utils/materiaFilters.js'
+import MateriaModal from '../components/MateriaModal.jsx'
+import ConfirmModal from '../components/ConfirmModal.jsx'
 
 function MateriasList() {
   const { user } = useAuth()
@@ -22,6 +24,14 @@ function MateriasList() {
   const [filtroEstado, setFiltroEstado] = useState('TODOS')
   const [filtroAño, setFiltroAño] = useState('TODOS')
   const [recarga, setRecarga] = useState(0)
+
+  // Estados para modales de creación, edición y eliminación
+  const [materiaModalOpen, setMateriaModalOpen] = useState(false)
+  const [materiaSeleccionada, setMateriaSeleccionada] = useState(null)
+  const [confirmModalOpen, setConfirmModalOpen] = useState(false)
+  const [materiaAEliminar, setMateriaAEliminar] = useState(null)
+  const [deleting, setDeleting] = useState(false)
+  const [feedback, setFeedback] = useState(null)
 
   useEffect(() => {
     let isMounted = true
@@ -75,6 +85,52 @@ function MateriasList() {
   const tieneFiltrosActivos = busqueda.trim() !== '' || filtroEstado !== 'TODOS' || filtroAño !== 'TODOS'
   const puedeGestionar = canManageMaterias(user)
 
+  const handleAbrirCrear = () => {
+    setMateriaSeleccionada(null)
+    setMateriaModalOpen(true)
+  }
+
+  const handleAbrirEditar = (materia) => {
+    setMateriaSeleccionada(materia)
+    setMateriaModalOpen(true)
+  }
+
+  const handleAbrirEliminar = (materia) => {
+    setMateriaAEliminar(materia)
+    setConfirmModalOpen(true)
+  }
+
+  const handleConfirmarEliminar = async () => {
+    if (!materiaAEliminar) return
+    setDeleting(true)
+    try {
+      await academicService.deleteMateria(materiaAEliminar.id)
+      setFeedback({
+        tipo: 'success',
+        mensaje: `La materia "${materiaAEliminar.nombre}" fue eliminada correctamente del plan de estudio.`,
+      })
+      setConfirmModalOpen(false)
+      setMateriaAEliminar(null)
+      setRecarga((prev) => prev + 1)
+    } catch (err) {
+      setFeedback({
+        tipo: 'danger',
+        mensaje: err?.message || 'Error al eliminar la materia del servidor.',
+      })
+    } finally {
+      setDeleting(false)
+    }
+  }
+
+  const handleModalSuccess = (resultado, accion) => {
+    const accionTxt = accion === 'CREATE' ? 'registrada' : 'actualizada'
+    setFeedback({
+      tipo: 'success',
+      mensaje: `Asignatura "${resultado.nombre}" ${accionTxt} con éxito.`,
+    })
+    setRecarga((prev) => prev + 1)
+  }
+
   return (
     <main className="flex-grow-1 pb-5">
       {/* Hero Banner compacto y consistente */}
@@ -91,6 +147,22 @@ function MateriasList() {
       </section>
 
       <div className="container">
+        {/* Mensaje de retroalimentación de operaciones CRUD */}
+        {feedback && (
+          <div
+            className={`alert alert-${feedback.tipo} alert-dismissible fade show d-flex align-items-center justify-content-between mb-3`}
+            role="alert"
+          >
+            <div>{feedback.mensaje}</div>
+            <button
+              type="button"
+              className="btn-close"
+              aria-label="Cerrar"
+              onClick={() => setFeedback(null)}
+            />
+          </div>
+        )}
+
         {/* Barra superior de navegación y acciones */}
         <div className="d-flex justify-content-between align-items-center mb-3">
           <nav aria-label="breadcrumb">
@@ -103,8 +175,8 @@ function MateriasList() {
           {puedeGestionar && (
             <button
               type="button"
-              className="btn btn-primary btn-sm"
-              onClick={() => alert('La creación de materias estará activa en el Bloque 4.')}
+              className="btn btn-primary btn-sm fw-semibold shadow-sm"
+              onClick={handleAbrirCrear}
             >
               + Nueva Materia
             </button>
@@ -324,12 +396,35 @@ function MateriasList() {
                             )}
                           </td>
                           <td className="text-end">
-                            <Link
-                              to={`/materias/${materia.id}`}
-                              className="btn btn-outline-primary btn-sm"
-                            >
-                              Ver Detalle →
-                            </Link>
+                            <div className="d-inline-flex gap-1">
+                              <Link
+                                to={`/materias/${materia.id}`}
+                                className="btn btn-outline-primary btn-sm"
+                                title="Ver detalles y exámenes"
+                              >
+                                Ver Detalle
+                              </Link>
+                              {puedeGestionar && (
+                                <>
+                                  <button
+                                    type="button"
+                                    className="btn btn-outline-secondary btn-sm"
+                                    title="Editar asignatura"
+                                    onClick={() => handleAbrirEditar(materia)}
+                                  >
+                                    ✏️
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="btn btn-outline-danger btn-sm"
+                                    title="Eliminar asignatura"
+                                    onClick={() => handleAbrirEliminar(materia)}
+                                  >
+                                    🗑️
+                                  </button>
+                                </>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -347,6 +442,33 @@ function MateriasList() {
           </>
         )}
       </div>
+
+      {/* Modal para Crear y Editar Materia */}
+      <MateriaModal
+        isOpen={materiaModalOpen}
+        materiaAEditar={materiaSeleccionada}
+        onClose={() => setMateriaModalOpen(false)}
+        onSuccess={handleModalSuccess}
+      />
+
+      {/* Modal para Confirmar Eliminación */}
+      <ConfirmModal
+        isOpen={confirmModalOpen}
+        titulo="Eliminar Asignatura"
+        mensaje={
+          materiaAEliminar
+            ? `¿Estás seguro de que deseas eliminar permanentemente la materia "${materiaAEliminar.nombre}"? Todos sus exámenes asociados también se borrarán.`
+            : '¿Deseas eliminar esta asignatura?'
+        }
+        confirmTexto="Sí, eliminar"
+        confirmClase="btn-danger"
+        loading={deleting}
+        onClose={() => {
+          setConfirmModalOpen(false)
+          setMateriaAEliminar(null)
+        }}
+        onConfirm={handleConfirmarEliminar}
+      />
     </main>
   )
 }

@@ -46,19 +46,21 @@ describe('Utilidades de Roles y Permisos (RBAC - TDD)', () => {
   })
 
   describe('Permisos de gestión de recursos (RBAC)', () => {
-    it('canManageMaterias permite acceso a ADMIN y DOCENTE, no a ESTUDIANTE', () => {
+    it('canManageMaterias permite acceso a cualquier usuario autenticado (gestor personal)', () => {
       assert.strictEqual(canManageMaterias(adminUser), true)
       assert.strictEqual(canManageMaterias(superUser), true)
       assert.strictEqual(canManageMaterias(docenteUser), true)
-      assert.strictEqual(canManageMaterias(estudianteUser), false)
+      assert.strictEqual(canManageMaterias(estudianteUser), true)
       assert.strictEqual(canManageMaterias(null), false)
+      assert.strictEqual(canManageMaterias(undefined), false)
     })
 
-    it('canManageExamenes permite acceso a ADMIN y DOCENTE, no a ESTUDIANTE', () => {
+    it('canManageExamenes permite acceso a cualquier usuario autenticado para sus materias', () => {
       assert.strictEqual(canManageExamenes(adminUser), true)
       assert.strictEqual(canManageExamenes(docenteUser), true)
-      assert.strictEqual(canManageExamenes(estudianteUser), false)
+      assert.strictEqual(canManageExamenes(estudianteUser), true)
       assert.strictEqual(canManageExamenes(null), false)
+      assert.strictEqual(canManageExamenes(undefined), false)
     })
 
     it('canManageFacultades es exclusivo para ADMIN', () => {

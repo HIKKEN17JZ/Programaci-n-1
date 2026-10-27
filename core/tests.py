@@ -164,8 +164,8 @@ class MateriaTests(BaseAPITestCase):
         materia_creada = Materia.objects.get(id=response.data['id'])
         self.assertEqual(materia_creada.usuario, self.docente1)
 
-    def test_create_materia_as_estudiante_forbidden(self):
-        """ESTUDIANTE no puede crear materias (restringido a ADMIN o DOCENTE)."""
+    def test_create_materia_as_estudiante_success(self):
+        """ESTUDIANTE puede crear materias para su propio plan de estudio personal."""
         self.client.force_authenticate(user=self.estudiante)
         payload = {
             'nombre': 'Física I',
@@ -174,7 +174,10 @@ class MateriaTests(BaseAPITestCase):
             'estado': 'CUR'
         }
         response = self.client.post('/api/materias/', payload)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['nombre'], 'Física I')
+        materia_creada = Materia.objects.get(id=response.data['id'])
+        self.assertEqual(materia_creada.usuario, self.estudiante)
 
     def test_update_own_materia_by_docente_success(self):
         """DOCENTE puede actualizar su propia materia."""
@@ -305,7 +308,7 @@ class ExamenTests(BaseAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def test_create_examen_as_estudiante_forbidden(self):
-        """ESTUDIANTE no puede crear exámenes."""
+        """ESTUDIANTE no puede crear exámenes para materias que no le pertenecen."""
         self.client.force_authenticate(user=self.estudiante)
         payload = {
             'materia': self.materia_docente1.id,
@@ -315,6 +318,25 @@ class ExamenTests(BaseAPITestCase):
         }
         response = self.client.post('/api/examenes/', payload)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_create_examen_for_own_materia_as_estudiante_success(self):
+        """ESTUDIANTE puede registrar exámenes para sus propias materias."""
+        materia_propia = Materia.objects.create(
+            usuario=self.estudiante,
+            nombre='Química General',
+            año_dictado=2024,
+            creditos_totales=4,
+            estado='CUR'
+        )
+        self.client.force_authenticate(user=self.estudiante)
+        payload = {
+            'materia': materia_propia.id,
+            'fecha': '2026-07-20',
+            'nota': 8.0,
+            'tipo': 'FIN'
+        }
+        response = self.client.post('/api/examenes/', payload)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def test_validation_nota_negative_rejected(self):
         """Nota negativa (<0) es rechazada con 400 Bad Request."""

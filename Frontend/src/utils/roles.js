@@ -42,23 +42,26 @@ export function isEstudiante(user) {
 }
 
 /**
- * Evalúa si el usuario tiene permisos para crear, editar o eliminar materias.
+ * Evalúa si el usuario tiene permisos para crear, editar o eliminar materias en su plan de estudio.
+ * En el modelo de gestor personal y académico, cualquier usuario autenticado gestiona sus asignaturas.
  *
  * @param {object|null} user - Objeto de usuario.
  * @returns {boolean}
  */
 export function canManageMaterias(user) {
-  return isAdmin(user) || isDocente(user)
+  if (!user) return false
+  return true
 }
 
 /**
- * Evalúa si el usuario tiene permisos para registrar o calificar exámenes.
+ * Evalúa si el usuario tiene permisos para registrar o calificar exámenes en sus asignaturas.
  *
  * @param {object|null} user - Objeto de usuario.
  * @returns {boolean}
  */
 export function canManageExamenes(user) {
-  return isAdmin(user) || isDocente(user)
+  if (!user) return false
+  return true
 }
 
 /**
