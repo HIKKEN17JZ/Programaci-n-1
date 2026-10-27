@@ -1,4 +1,4 @@
-import { Navigate, Outlet, Route, Routes } from 'react-router-dom'
+import { Outlet, Route, Routes } from 'react-router-dom'
 import Navbar from './components/Navbar.jsx'
 import Footer from './components/Footer.jsx'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
@@ -9,6 +9,8 @@ import MateriasList from './views/MateriasList.jsx'
 import MateriaDetail from './views/MateriaDetail.jsx'
 import ExamenesList from './views/ExamenesList.jsx'
 import Profile from './views/Profile.jsx'
+import Unauthorized from './views/Unauthorized.jsx'
+import NotFound from './views/NotFound.jsx'
 
 function Layout() {
   return (
@@ -25,6 +27,8 @@ function App() {
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+
+      {/* Rutas autenticadas generales */}
       <Route element={<ProtectedRoute />}>
         <Route element={<Layout />}>
           <Route index element={<Home />} />
@@ -34,7 +38,13 @@ function App() {
           <Route path="perfil" element={<Profile />} />
         </Route>
       </Route>
-      <Route path="*" element={<Navigate to="/" replace />} />
+
+      {/* Páginas de Error 403 y 404 dentro del Layout */}
+      <Route element={<Layout />}>
+        <Route path="/unauthorized" element={<Unauthorized />} />
+        <Route path="/403" element={<Unauthorized />} />
+        <Route path="*" element={<NotFound />} />
+      </Route>
     </Routes>
   )
 }
