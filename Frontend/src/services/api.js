@@ -12,9 +12,19 @@ export class ApiError extends Error {
   static extractMessage(data, fallback) {
     if (!data) return fallback
 
-    if (typeof data === 'string') return data
+    if (typeof data === 'string') {
+      const lower = data.toLowerCase()
+      if (lower.includes('given token not valid') || lower.includes('token_not_valid')) {
+        return 'Tu sesión ha expirado por inactividad. Por favor, iniciá sesión nuevamente para continuar.'
+      }
+      return data
+    }
 
     if (data.detail && typeof data.detail === 'string') {
+      const lower = data.detail.toLowerCase()
+      if (lower.includes('given token not valid') || data.code === 'token_not_valid') {
+        return 'Tu sesión ha expirado por inactividad. Por favor, iniciá sesión nuevamente para continuar.'
+      }
       return data.detail
     }
 
@@ -51,6 +61,7 @@ function resolveFetch(customFetch) {
 export function createApiClient({
   baseUrl = 'http://localhost:8000/api',
   getAuthToken = () => tokenStorage.getAccessToken(),
+  storage = tokenStorage,
   customFetch = null,
 } = {}) {
   const fetchFn = resolveFetch(customFetch)
@@ -96,6 +107,43 @@ export function createApiClient({
     const responseData = isJson ? await response.json() : await response.text()
 
     if (!response.ok) {
+      if (response.status === 401 && !skipAuth && !options._isRetry) {
+        const refreshToken = storage?.getRefreshToken ? storage.getRefreshToken() : null
+        if (refreshToken) {
+          try {
+            const refreshUrl = normalizeUrl(baseUrl, '/token/refresh/')
+            const refreshRes = await fetchFn(refreshUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ refresh: refreshToken }),
+            })
+
+            if (refreshRes.ok) {
+              const refreshData = await refreshRes.json()
+              if (refreshData?.access) {
+                storage.setTokens({
+                  access: refreshData.access,
+                  refresh: refreshData.refresh || refreshToken,
+                })
+                return await request(endpoint, {
+                  ...options,
+                  _isRetry: true,
+                })
+              }
+            }
+          } catch {
+            // El refresh falló, limpiar tokens y notificar expiración
+          }
+        }
+
+        if (storage?.clearTokens) {
+          storage.clearTokens()
+        }
+        if (typeof window !== 'undefined' && window.dispatchEvent) {
+          window.dispatchEvent(new CustomEvent('auth:expired'))
+        }
+      }
+
       throw new ApiError(response.status, responseData, `Error HTTP ${response.status}`)
     }
 

@@ -2,19 +2,28 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '../hooks/useAuth.js'
 import { academicService } from '../services/academicService.js'
 import StatCard from '../components/StatCard.jsx'
-import ProgressCard from '../components/ProgressCard.jsx'
-import PlanEstudioCard from '../components/PlanEstudioCard.jsx'
-import MesasExamenCard from '../components/MesasExamenCard.jsx'
+import ProgresoDetallePanel from '../components/home/ProgresoDetallePanel.jsx'
+import MateriasDetallePanel from '../components/home/MateriasDetallePanel.jsx'
+import MesasDetallePanel from '../components/home/MesasDetallePanel.jsx'
 
 function Home() {
   const { user } = useAuth()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [reloadKey, setReloadKey] = useState(0)
+  const [seccionActiva, setSeccionActiva] = useState('progreso') // 'progreso' | 'materias' | 'examenes'
   const [dashboard, setDashboard] = useState({
     materias: [],
     mesas: [],
     avance: { obtenidos: 0, totales: 0, porcentaje: 0 },
+    metricasExamenes: {
+      total: 0,
+      rendidos: 0,
+      aprobados: 0,
+      aplazados: 0,
+      promedioConAplazos: 0,
+      promedioSinAplazos: 0,
+    },
   })
 
   useEffect(() => {
@@ -49,10 +58,19 @@ function Home() {
     setReloadKey((prev) => prev + 1)
   }
 
+  const handleCambiarSeccion = (seccion) => {
+    setSeccionActiva(seccion)
+    const elemento = document.getElementById('panel-interactivo')
+    if (elemento) {
+      elemento.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+    }
+  }
+
   const planNombre = user?.plan_estudio_nombre || 'Plataforma de Gestión de Carrera'
 
   return (
-    <main className="flex-grow-1">
+    <main className="flex-grow-1 pb-5">
+      {/* Hero Banner */}
       <section className="bg-primary text-white text-center py-3 py-md-4 shadow-sm">
         <div className="container">
           <span className="badge rounded-pill text-bg-light text-primary mb-2">
@@ -61,23 +79,16 @@ function Home() {
           <h1 className="h3 fw-bold mb-1">
             {user ? `¡Hola, ${user.username}!` : 'Plataforma de Gestión de Carrera'}
           </h1>
-          <p className="small text-white-50 mx-auto mb-2" style={{ maxWidth: '580px' }}>
+          <p className="small text-white-50 mx-auto mb-0" style={{ maxWidth: '580px' }}>
             {planNombre}. Plan de estudio, mesas de examen y progreso académico en tiempo real.
           </p>
-          <div className="d-flex flex-column flex-sm-row gap-2 justify-content-center">
-            <a href="#progreso-carrera" className="btn btn-outline-light btn-sm px-3">
-              Comenzá ahora
-            </a>
-            <a href="#plan-estudio" className="btn btn-outline-light btn-sm px-3">
-              Ver características
-            </a>
-          </div>
         </div>
       </section>
 
+      {/* Manejo de Error */}
       {error && (
         <div className="container mt-4">
-          <div className="alert alert-danger d-flex align-items-center justify-content-between" role="alert">
+          <div className="alert alert-danger d-flex align-items-center justify-content-between shadow-sm" role="alert">
             <div>
               <strong>Error:</strong> {error}
             </div>
@@ -88,6 +99,7 @@ function Home() {
         </div>
       )}
 
+      {/* Spinner de Carga */}
       {loading && (
         <div className="d-flex justify-content-center align-items-center py-5">
           <div className="spinner-border text-primary" role="status">
@@ -96,47 +108,62 @@ function Home() {
         </div>
       )}
 
+      {/* Contenido Interactivo */}
       {!loading && !error && (
         <>
-          <section className="bg-light py-4">
+          {/* Fila de 3 Notificadores / Selectores Interactivos */}
+          <section className="bg-light py-4 border-bottom shadow-xs" id="panel-selector">
             <div className="container">
               <div className="row text-center">
                 <StatCard
+                  valor={`${dashboard.avance.porcentaje}%`}
+                  etiqueta="Avance de la carrera"
+                  icono="📊"
+                  isActive={seccionActiva === 'progreso'}
+                  onClick={() => handleCambiarSeccion('progreso')}
+                  subetiqueta="Ver semáforo y créditos"
+                />
+                <StatCard
                   valor={dashboard.materias.length}
                   etiqueta="Materias en tu plan"
-                  targetId="plan-estudio"
+                  icono="📚"
+                  isActive={seccionActiva === 'materias'}
+                  onClick={() => handleCambiarSeccion('materias')}
+                  subetiqueta="Ver catálogo y estado"
                 />
                 <StatCard
                   valor={dashboard.mesas.length}
                   etiqueta="Mesas de examen"
-                  targetId="mesas-examen"
-                />
-                <StatCard
-                  valor={`${dashboard.avance.porcentaje}%`}
-                  etiqueta="Avance de la carrera"
-                  targetId="progreso-carrera"
+                  icono="📝"
+                  isActive={seccionActiva === 'examenes'}
+                  onClick={() => handleCambiarSeccion('examenes')}
+                  subetiqueta="Ver notas y promedios"
                 />
               </div>
             </div>
           </section>
 
-          <section className="py-5" id="caracteristicas">
+          {/* Panel Desplegado según la sección seleccionada */}
+          <section className="py-4" id="panel-interactivo">
             <div className="container">
-              <div className="text-center mb-5">
-                <h2 className="fw-bold">Gestioná tu carrera en un solo lugar</h2>
-                <p className="text-secondary mx-auto" style={{ maxWidth: '560px' }}>
-                  Tu historial académico, organizado y al día.
-                </p>
-              </div>
-
-              <div className="row">
-                <ProgressCard
-                  obtenidos={dashboard.avance.obtenidos}
-                  totales={dashboard.avance.totales}
+              {seccionActiva === 'progreso' && (
+                <ProgresoDetallePanel
+                  avance={dashboard.avance}
+                  materias={dashboard.materias}
+                  metricasExamenes={dashboard.metricasExamenes}
                 />
-                <PlanEstudioCard materias={dashboard.materias} />
-                <MesasExamenCard mesas={dashboard.mesas} />
-              </div>
+              )}
+
+              {seccionActiva === 'materias' && (
+                <MateriasDetallePanel materias={dashboard.materias} />
+              )}
+
+              {seccionActiva === 'examenes' && (
+                <MesasDetallePanel
+                  mesas={dashboard.mesas}
+                  metricasExamenes={dashboard.metricasExamenes}
+                />
+              )}
             </div>
           </section>
         </>

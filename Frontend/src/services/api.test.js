@@ -12,6 +12,17 @@ describe('Cliente API HTTP (TP8 - TDD)', () => {
     assert.strictEqual(err.message, 'Credenciales inválidas')
   })
 
+  it('ApiError traduce mensajes técnicos de token inválido o expirado a un aviso comprensible en español', () => {
+    const errorData = { detail: 'Given token not valid for any token type', code: 'token_not_valid' }
+    const err = new ApiError(401, errorData, 'Error por defecto')
+
+    assert.strictEqual(err.status, 401)
+    assert.strictEqual(
+      err.message,
+      'Tu sesión ha expirado por inactividad. Por favor, iniciá sesión nuevamente para continuar.'
+    )
+  })
+
   it('ApiError extrae mensajes de validación de campos de DRF', () => {
     const errorData = { username: ['Este usuario ya existe.'] }
     const err = new ApiError(400, errorData, 'Error al registrar')

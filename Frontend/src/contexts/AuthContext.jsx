@@ -31,8 +31,21 @@ export function AuthProvider({ children }) {
 
     initializeAuth()
 
+    const handleAuthExpired = () => {
+      if (isMounted) {
+        setUser(null)
+      }
+    }
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('auth:expired', handleAuthExpired)
+    }
+
     return () => {
       isMounted = false
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('auth:expired', handleAuthExpired)
+      }
     }
   }, [])
 

@@ -54,6 +54,14 @@ function Login() {
                   </p>
                 </div>
 
+                {location.state?.sessionExpired && (
+                  <div className="alert alert-warning py-2 px-3 small d-flex align-items-center gap-2" role="alert">
+                    <span>⏳</span>
+                    <div>
+                      Tu sesión se ha cerrado por inactividad. Por favor, ingresá nuevamente.
+                    </div>
+                  </div>
+                )}
                 {registeredUser && (
                   <div className="alert alert-success py-2 px-3 small" role="alert">
                     Usuario registrado. Iniciá sesión como <strong>{registeredUser}</strong>
