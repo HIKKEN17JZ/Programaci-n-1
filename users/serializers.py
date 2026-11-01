@@ -6,6 +6,7 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'username', 'email', 'role', 'facultad', 'plan_estudio_nombre']
+        read_only_fields = ['id', 'role']
 
 class RegisterSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(required=True)

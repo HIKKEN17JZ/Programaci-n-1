@@ -274,90 +274,92 @@ function MateriasList() {
         )}
 
         {/* Barra de Filtros y Búsqueda */}
-        <div className="card border-0 shadow-sm mb-4">
-          <div className="card-body">
-            <div className="row g-3 align-items-center">
-              {/* Buscador */}
-              <div className="col-12 col-md-5">
-                <label htmlFor="busqueda-materia" className="form-label small fw-semibold text-secondary mb-1">
-                  Buscar por nombre
-                </label>
-                <div className="input-group">
-                  <input
-                    id="busqueda-materia"
-                    type="text"
-                    className="form-control"
-                    placeholder="Ej. Programación, Álgebra, Redes..."
-                    value={busqueda}
-                    onChange={(e) => setBusqueda(e.target.value)}
-                  />
-                  {busqueda && (
-                    <button
-                      type="button"
-                      className="btn btn-outline-secondary"
-                      onClick={() => setBusqueda('')}
-                      title="Limpiar búsqueda"
-                    >
-                      ✕
-                    </button>
-                  )}
+        {!loading && !error && materias.length > 0 && (
+          <div className="card border-0 shadow-sm mb-4">
+            <div className="card-body">
+              <div className="row g-3 align-items-center">
+                {/* Buscador */}
+                <div className="col-12 col-md-5">
+                  <label htmlFor="busqueda-materia" className="form-label small fw-semibold text-secondary mb-1">
+                    Buscar por nombre
+                  </label>
+                  <div className="input-group">
+                    <input
+                      id="busqueda-materia"
+                      type="text"
+                      className="form-control"
+                      placeholder="Ej. Programación, Álgebra, Redes..."
+                      value={busqueda}
+                      onChange={(e) => setBusqueda(e.target.value)}
+                    />
+                    {busqueda && (
+                      <button
+                        type="button"
+                        className="btn btn-outline-secondary"
+                        onClick={() => setBusqueda('')}
+                        title="Limpiar búsqueda"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
                 </div>
-              </div>
 
-              {/* Filtro Estado */}
-              <div className="col-6 col-md-3">
-                <label htmlFor="filtro-estado" className="form-label small fw-semibold text-secondary mb-1">
-                  Estado
-                </label>
-                <select
-                  id="filtro-estado"
-                  className="form-select"
-                  value={filtroEstado}
-                  onChange={(e) => setFiltroEstado(e.target.value)}
-                >
-                  <option value="TODOS">Todos los estados</option>
-                  <option value="APR">Aprobadas (APR)</option>
-                  <option value="CUR">Cursando (CUR)</option>
-                  <option value="REG">Regulares (REG)</option>
-                  <option value="PEN">Pendientes (PEN)</option>
-                  <option value="REC">Recursando (REC)</option>
-                </select>
-              </div>
+                {/* Filtro Estado */}
+                <div className="col-6 col-md-3">
+                  <label htmlFor="filtro-estado" className="form-label small fw-semibold text-secondary mb-1">
+                    Estado
+                  </label>
+                  <select
+                    id="filtro-estado"
+                    className="form-select"
+                    value={filtroEstado}
+                    onChange={(e) => setFiltroEstado(e.target.value)}
+                  >
+                    <option value="TODOS">Todos los estados</option>
+                    <option value="APR">Aprobadas (APR)</option>
+                    <option value="CUR">Cursando (CUR)</option>
+                    <option value="REG">Regulares (REG)</option>
+                    <option value="PEN">Pendientes (PEN)</option>
+                    <option value="REC">Recursando (REC)</option>
+                  </select>
+                </div>
 
-              {/* Filtro Año */}
-              <div className="col-6 col-md-2">
-                <label htmlFor="filtro-año" className="form-label small fw-semibold text-secondary mb-1">
-                  Año de carrera
-                </label>
-                <select
-                  id="filtro-año"
-                  className="form-select"
-                  value={filtroAño}
-                  onChange={(e) => setFiltroAño(e.target.value)}
-                >
-                  <option value="TODOS">Todos</option>
-                  {añosDisponibles.map((año) => (
-                    <option key={año} value={año}>
-                      {formatearNivelCarrera(año)}
-                    </option>
-                  ))}
-                </select>
-              </div>
+                {/* Filtro Año */}
+                <div className="col-6 col-md-2">
+                  <label htmlFor="filtro-año" className="form-label small fw-semibold text-secondary mb-1">
+                    Año de carrera
+                  </label>
+                  <select
+                    id="filtro-año"
+                    className="form-select"
+                    value={filtroAño}
+                    onChange={(e) => setFiltroAño(e.target.value)}
+                  >
+                    <option value="TODOS">Todos</option>
+                    {añosDisponibles.map((año) => (
+                      <option key={año} value={año}>
+                        {formatearNivelCarrera(año)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-              {/* Botón limpiar filtros */}
-              <div className="col-12 col-md-2 d-flex align-items-end pt-md-4">
-                <button
-                  type="button"
-                  className="btn btn-outline-secondary w-100"
-                  onClick={handleLimpiarFiltros}
-                  disabled={!tieneFiltrosActivos}
-                >
-                  Limpiar filtros
-                </button>
+                {/* Botón limpiar filtros */}
+                <div className="col-12 col-md-2 d-flex align-items-end pt-md-4">
+                  <button
+                    type="button"
+                    className="btn btn-outline-secondary w-100"
+                    onClick={handleLimpiarFiltros}
+                    disabled={!tieneFiltrosActivos}
+                  >
+                    Limpiar filtros
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Manejo de Error */}
         {error && (
@@ -388,11 +390,11 @@ function MateriasList() {
               <div className="card border-0 shadow-sm text-center py-5 px-3">
                 <div className="card-body">
                   <span className="display-4 text-muted mb-3 d-inline-block">📚</span>
-                  <h3 className="h4 fw-bold">No hay materias registradas</h3>
-                  <p className="text-secondary mx-auto" style={{ maxWidth: '480px' }}>
-                    Aún no tienes materias vinculadas a tu cuenta de usuario en la API.
+                  <h3 className="h4 fw-bold">Actualmente no tienes un plan cargado</h3>
+                  <p className="text-secondary mx-auto mb-4" style={{ maxWidth: '520px' }}>
+                    ¡Vamos, quiero creer que no eres un flojo! Da el primer paso organizando tu carrera: añade tus materias una a una o importa tu plan de estudio completo para poner en marcha tu seguimiento académico.
                   </p>
-                  <Link to="/" className="btn btn-primary mt-2">
+                  <Link to="/" className="btn btn-outline-primary mt-2">
                     Volver al Panel Principal
                   </Link>
                 </div>

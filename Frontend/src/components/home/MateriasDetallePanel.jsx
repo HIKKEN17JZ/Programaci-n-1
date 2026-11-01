@@ -63,12 +63,12 @@ function MateriasDetallePanel({ materias = [] }) {
         {materias.length === 0 ? (
           <div className="text-center py-5 px-3 bg-light rounded-3 border">
             <span className="display-5 text-muted mb-2 d-inline-block">📖</span>
-            <h4 className="h6 fw-bold">Aún no tienes materias en tu plan de estudio</h4>
+            <h4 className="h6 fw-bold">Actualmente no tienes un plan cargado</h4>
             <p className="text-secondary small mx-auto mb-3" style={{ maxWidth: '460px' }}>
-              Puedes agregar materias de forma individual o importar tu plan completo desde una plantilla Excel / CSV.
+              ¡No te quedes atrás! Da el primer paso agregando tus materias o importando tu plan de estudio para poner en marcha tu seguimiento.
             </p>
             <Link to="/materias" className="btn btn-primary btn-sm fw-semibold">
-              + Cargar Asignaturas
+              + Cargar mi Plan de Estudio
             </Link>
           </div>
         ) : (

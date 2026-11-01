@@ -5,29 +5,46 @@ import {
   descargarArchivoCSV,
 } from '../utils/csvHelper'
 import { academicService } from '../services/academicService'
+import { authService } from '../services/authService'
+import { useAuth } from '../hooks/useAuth'
 import { formatearNivelCarrera } from '../utils/progress'
 
 /**
- * Modal para importación masiva de plan de estudio desde archivos CSV/Excel.
- *
- * Principios Clean Code:
- * - Validación temprana y vista previa antes de impactar en la API.
- * - Progreso visual de importación por lotes.
- * - Soporte para descarga inmediata de plantilla de ejemplo.
+ * Contenido interno del modal para importación masiva de plan de estudio.
+ * Se monta fresco cada vez que el modal se abre.
  */
-export function ImportarPlanModal({ isOpen, onClose, onSuccess }) {
+function ImportarPlanModalContent({ onClose, onSuccess }) {
+  const { user, updateUser, refreshUser } = useAuth()
   const [archivoNombre, setArchivoNombre] = useState('')
+  const [carreraNombre, setCarreraNombre] = useState(user?.plan_estudio_nombre || '')
+  const [guardandoCarrera, setGuardandoCarrera] = useState(false)
+  const [carreraGuardada, setCarreraGuardada] = useState(false)
   const [materiasValidas, setMateriasValidas] = useState([])
   const [errores, setErrores] = useState([])
   const [procesando, setProcesando] = useState(false)
   const [progreso, setProgreso] = useState({ actual: 0, total: 0 })
   const [errorGlobal, setErrorGlobal] = useState(null)
 
-  if (!isOpen) return null
-
   const handleDescargarPlantilla = () => {
-    const csv = generarPlantillaCSV()
+    const csv = generarPlantillaCSV(carreraNombre)
     descargarArchivoCSV(csv, 'plantilla_plan_estudio.csv')
+  }
+
+  const handleGuardarSoloCarrera = async () => {
+    const nueva = carreraNombre.trim()
+    if (!nueva) return
+    setGuardandoCarrera(true)
+    setErrorGlobal(null)
+    try {
+      await authService.updateProfile({ plan_estudio_nombre: nueva })
+      updateUser?.({ plan_estudio_nombre: nueva })
+      await refreshUser?.()
+      setCarreraGuardada(true)
+    } catch (err) {
+      setErrorGlobal(`Error al guardar la carrera: ${err?.message || 'Error en el servidor'}`)
+    } finally {
+      setGuardandoCarrera(false)
+    }
   }
 
   const handleSeleccionarArchivo = (e) => {
@@ -46,6 +63,10 @@ export function ImportarPlanModal({ isOpen, onClose, onSuccess }) {
         const resultado = parsearCSVMaterias(texto)
         setMateriasValidas(resultado.materiasValidas)
         setErrores(resultado.errores)
+        if (resultado.carreraDetectada) {
+          setCarreraNombre(resultado.carreraDetectada)
+          setCarreraGuardada(false)
+        }
       } catch (err) {
         setErrorGlobal(err?.message || 'No se pudo leer el archivo seleccionado.')
       }
@@ -62,6 +83,18 @@ export function ImportarPlanModal({ isOpen, onClose, onSuccess }) {
     setProcesando(true)
     setErrorGlobal(null)
     setProgreso({ actual: 0, total: materiasValidas.length })
+
+    // Si el usuario especificó o se detectó la carrera, actualizar su perfil
+    const nuevaCarrera = carreraNombre.trim()
+    if (nuevaCarrera) {
+      try {
+        await authService.updateProfile({ plan_estudio_nombre: nuevaCarrera })
+        updateUser?.({ plan_estudio_nombre: nuevaCarrera })
+        await refreshUser?.()
+      } catch (err) {
+        console.error('Error al actualizar carrera en perfil:', err)
+      }
+    }
 
     let creadas = 0
     const fallos = []
@@ -160,6 +193,44 @@ export function ImportarPlanModal({ isOpen, onClose, onSuccess }) {
                     Archivo cargado: <strong>{archivoNombre}</strong>
                   </div>
                 )}
+              </div>
+
+              {/* Nombre de la Carrera o Plan de Estudio */}
+              <div className="mb-3 p-3 bg-light rounded-3 border">
+                <div className="d-flex justify-content-between align-items-center mb-1">
+                  <label htmlFor="input-carrera-nombre" className="form-label fw-semibold small text-dark mb-0">
+                    🎓 Nombre de tu Carrera / Plan de Estudio:
+                  </label>
+                  {carreraGuardada && (
+                    <span className="badge text-bg-success small">✓ Guardado</span>
+                  )}
+                </div>
+                <div className="input-group">
+                  <input
+                    id="input-carrera-nombre"
+                    type="text"
+                    className="form-control"
+                    placeholder="Ej. Medicina, Ingeniería en Informática, Abogacía..."
+                    value={carreraNombre}
+                    onChange={(e) => {
+                      setCarreraNombre(e.target.value)
+                      setCarreraGuardada(false)
+                    }}
+                    disabled={procesando}
+                  />
+                  <button
+                    type="button"
+                    className="btn btn-outline-primary btn-sm px-3"
+                    onClick={handleGuardarSoloCarrera}
+                    disabled={procesando || !carreraNombre.trim() || guardandoCarrera}
+                    title="Guardar inmediatamente el nombre de tu carrera en el perfil"
+                  >
+                    {guardandoCarrera ? 'Guardando...' : 'Guardar Carrera'}
+                  </button>
+                </div>
+                <div className="form-text text-muted" style={{ fontSize: '0.78rem' }}>
+                  Este título se mostrará en el encabezado principal de inicio y en tu seguimiento académico.
+                </div>
               </div>
 
               {/* Error Global */}
@@ -276,5 +347,16 @@ export function ImportarPlanModal({ isOpen, onClose, onSuccess }) {
         </div>
       </div>
     </>
+  )
+}
+
+export function ImportarPlanModal({ isOpen, onClose, onSuccess }) {
+  if (!isOpen) return null
+
+  return (
+    <ImportarPlanModalContent
+      onClose={onClose}
+      onSuccess={onSuccess}
+    />
   )
 }

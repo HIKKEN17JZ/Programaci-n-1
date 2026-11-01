@@ -362,5 +362,24 @@ describe('Servicio de Autenticación (authService - TP8 - TDD)', () => {
     assert.strictEqual(result.ok, false)
     assert.strictEqual(result.message, 'username: A user with that username already exists.')
   })
+
+  it('updateProfile: envía PATCH a /users/me/ con los datos a actualizar', async () => {
+    let endpointLlamado = null
+    let payloadEnviado = null
+    const fakeApiClient = {
+      patch: async (endpoint, body) => {
+        endpointLlamado = endpoint
+        payloadEnviado = body
+        return { id: 1, plan_estudio_nombre: body.plan_estudio_nombre }
+      },
+    }
+
+    const authService = createAuthService({ apiClient: fakeApiClient, storage: {} })
+    const res = await authService.updateProfile({ plan_estudio_nombre: 'Medicina' })
+
+    assert.strictEqual(endpointLlamado, '/users/me/')
+    assert.deepStrictEqual(payloadEnviado, { plan_estudio_nombre: 'Medicina' })
+    assert.strictEqual(res.plan_estudio_nombre, 'Medicina')
+  })
 })
 

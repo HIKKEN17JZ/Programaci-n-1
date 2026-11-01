@@ -64,7 +64,8 @@ export function normalizarAñoDictadoCSV(añoRaw) {
  * Utiliza los niveles de carrera correspondientes (1, 2, 3...) para catalogarlas directamente.
  * @returns {string}
  */
-export function generarPlantillaCSV() {
+export function generarPlantillaCSV(carrera = '') {
+  const metaCarrera = carrera ? `# Carrera: ${carrera}\n` : '# Carrera: Ingeniería en Informática\n'
   const encabezados = 'nombre,año_dictado,creditos_totales,horas_semanales,estado,es_promocionable'
   const ejemplos = [
     'Programación I,1,8,6,CUR,si',
@@ -74,7 +75,7 @@ export function generarPlantillaCSV() {
     'Bases de Datos,2,8,6,PEN,si',
   ]
 
-  return `${BOM_UTF8}${encabezados}\n${ejemplos.join('\n')}\n`
+  return `${BOM_UTF8}${metaCarrera}${encabezados}\n${ejemplos.join('\n')}\n`
 }
 
 /**
@@ -144,25 +145,50 @@ function normalizarEncabezado(h) {
 export function parsearCSVMaterias(csvText) {
   const materiasValidas = []
   const errores = []
+  let carreraDetectada = ''
 
   if (!csvText || typeof csvText !== 'string') {
     return {
       materiasValidas: [],
       errores: [{ fila: 0, mensaje: 'El archivo CSV está vacío o no es válido.' }],
+      carreraDetectada: '',
     }
   }
 
   // Limpiar BOM UTF-8 si está presente
   const textoLimpio = csvText.startsWith(BOM_UTF8) ? csvText.slice(1) : csvText
-  const lineas = textoLimpio
+  const todasLasLineas = textoLimpio
     .split(/\r?\n/)
     .map((l) => l.trim())
     .filter((l) => l.length > 0)
+
+  // Extraer metadatos de comentarios o cabecera (# Carrera: Medicina, Carrera: Medicina, etc.)
+  const lineas = []
+  for (const l of todasLasLineas) {
+    // 1. Con numeral al inicio (# Carrera: Medicina o # Plan: Informática)
+    if (l.startsWith('#')) {
+      const match = l.match(/#\s*(?:carrera|plan(?:\s*de\s*estudio)?)\s*[:=]\s*(.+)/i)
+      if (match && match[1]) {
+        carreraDetectada = match[1].trim()
+      }
+      continue
+    }
+
+    // 2. Sin numeral al inicio pero como metadato clave:valor (Carrera: Medicina o Plan: Informática)
+    const matchClaveValor = l.match(/^(?:carrera|plan(?:\s*de\s*estudio)?)\s*[:=,;]\s*(.+)/i)
+    if (matchClaveValor && matchClaveValor[1]) {
+      carreraDetectada = matchClaveValor[1].trim()
+      continue
+    }
+
+    lineas.push(l)
+  }
 
   if (lineas.length === 0) {
     return {
       materiasValidas: [],
       errores: [{ fila: 0, mensaje: 'El archivo no contiene filas con datos.' }],
+      carreraDetectada,
     }
   }
 
@@ -181,6 +207,7 @@ export function parsearCSVMaterias(csvText) {
           mensaje: 'El archivo CSV debe tener un encabezado con la columna "nombre" o "materia".',
         },
       ],
+      carreraDetectada,
     }
   }
 
@@ -189,6 +216,7 @@ export function parsearCSVMaterias(csvText) {
   const idxHoras = encabezados.findIndex((h) => h.includes('hora') || h.includes('hs'))
   const idxEstado = encabezados.findIndex((h) => h === 'estado' || h === 'condicion')
   const idxPromocionable = encabezados.findIndex((h) => h.includes('promoc') || h === 'promocion')
+  const idxCarrera = encabezados.findIndex((h) => h === 'carrera' || h === 'plan' || h === 'plandeestudio')
 
   for (let i = 1; i < lineas.length; i++) {
     const filaNum = i + 1
@@ -198,6 +226,10 @@ export function parsearCSVMaterias(csvText) {
     if (!nombre) {
       errores.push({ fila: filaNum, mensaje: 'El nombre de la materia no puede estar vacío.' })
       continue
+    }
+
+    if (!carreraDetectada && idxCarrera !== -1 && valores[idxCarrera]?.trim()) {
+      carreraDetectada = valores[idxCarrera].trim()
     }
 
     const añoRaw = idxAño !== -1 ? valores[idxAño] : String(new Date().getFullYear())
@@ -240,7 +272,7 @@ export function parsearCSVMaterias(csvText) {
     })
   }
 
-  return { materiasValidas, errores }
+  return { materiasValidas, errores, carreraDetectada }
 }
 
 /**

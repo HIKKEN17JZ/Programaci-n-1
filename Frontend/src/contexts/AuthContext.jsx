@@ -66,9 +66,23 @@ export function AuthProvider({ children }) {
     setUser(null)
   }, [])
 
+  const updateUser = useCallback((datosActualizados) => {
+    setUser((prev) => (prev ? { ...prev, ...datosActualizados } : prev))
+  }, [])
+
+  const refreshUser = useCallback(async () => {
+    try {
+      const currentUser = await authService.getCurrentUser()
+      setUser(currentUser)
+      return currentUser
+    } catch {
+      return null
+    }
+  }, [])
+
   const contextValue = useMemo(
-    () => ({ user, loading, login, register, logout }),
-    [user, loading, login, register, logout],
+    () => ({ user, loading, login, register, logout, updateUser, refreshUser }),
+    [user, loading, login, register, logout, updateUser, refreshUser],
   )
 
   return (

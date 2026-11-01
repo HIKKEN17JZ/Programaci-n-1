@@ -11,7 +11,9 @@ function ProgresoDetallePanel({ avance = {}, materias = [], metricasExamenes = {
 
   // Mensaje orientativo de diagnóstico según el semáforo
   let mensajeDiagnostico = 'Estás iniciando el trayecto formativo. Concéntrate en afianzar las asignaturas del ciclo básico.'
-  if (porcentaje >= 75) {
+  if (materias.length === 0) {
+    mensajeDiagnostico = 'Actualmente no tienes materias cargadas en tu plan. ¡Carga tus asignaturas o importa tu plan de estudio para ver tu semáforo y porcentaje de avance!'
+  } else if (porcentaje >= 75) {
     mensajeDiagnostico = '¡Excelente ritmo! Has superado el 75% del plan de estudios y te encuentras en el tramo final de la carrera.'
   } else if (porcentaje >= 40) {
     mensajeDiagnostico = '¡Muy buen avance! Te encuentras en la mitad de la carrera con ritmo sostenido de cursada.'
@@ -114,11 +116,8 @@ function ProgresoDetallePanel({ avance = {}, materias = [], metricasExamenes = {
           </div>
         </div>
 
-        {/* Botones de acción rápida */}
-        <div className="d-flex flex-wrap gap-2 justify-content-end pt-2 border-top">
-          <Link to="/perfil" className="btn btn-outline-secondary btn-sm">
-            Ver Ficha de Perfil
-          </Link>
+        {/* Botón de acción rápida */}
+        <div className="d-flex justify-content-end pt-2 border-top">
           <Link to="/materias" className="btn btn-primary btn-sm fw-semibold">
             Ir al Plan de Estudio Completo →
           </Link>

@@ -237,86 +237,88 @@ function ExamenesList() {
         )}
 
         {/* Barra de Filtros */}
-        <div className="card border-0 shadow-sm mb-4">
-          <div className="card-body">
-            <div className="row g-3 align-items-center">
-              {/* Buscador */}
-              <div className="col-12 col-md-5">
-                <label htmlFor="busqueda-examen" className="form-label small fw-semibold text-secondary mb-1">
-                  Buscar por materia
-                </label>
-                <div className="input-group">
-                  <input
-                    id="busqueda-examen"
-                    type="text"
-                    className="form-control"
-                    placeholder="Ej. Programación, Base de Datos..."
-                    value={busqueda}
-                    onChange={(e) => setBusqueda(e.target.value)}
-                  />
-                  {busqueda && (
-                    <button
-                      type="button"
-                      className="btn btn-outline-secondary"
-                      onClick={() => setBusqueda('')}
-                      title="Limpiar búsqueda"
-                    >
-                      ✕
-                    </button>
-                  )}
+        {!loading && !error && examenes.length > 0 && (
+          <div className="card border-0 shadow-sm mb-4">
+            <div className="card-body">
+              <div className="row g-3 align-items-center">
+                {/* Buscador */}
+                <div className="col-12 col-md-5">
+                  <label htmlFor="busqueda-examen" className="form-label small fw-semibold text-secondary mb-1">
+                    Buscar por materia
+                  </label>
+                  <div className="input-group">
+                    <input
+                      id="busqueda-examen"
+                      type="text"
+                      className="form-control"
+                      placeholder="Ej. Programación, Base de Datos..."
+                      value={busqueda}
+                      onChange={(e) => setBusqueda(e.target.value)}
+                    />
+                    {busqueda && (
+                      <button
+                        type="button"
+                        className="btn btn-outline-secondary"
+                        onClick={() => setBusqueda('')}
+                        title="Limpiar búsqueda"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
                 </div>
-              </div>
 
-              {/* Filtro Tipo */}
-              <div className="col-6 col-md-3">
-                <label htmlFor="filtro-tipo" className="form-label small fw-semibold text-secondary mb-1">
-                  Tipo de examen
-                </label>
-                <select
-                  id="filtro-tipo"
-                  className="form-select"
-                  value={filtroTipo}
-                  onChange={(e) => setFiltroTipo(e.target.value)}
-                >
-                  <option value="TODOS">Todos los tipos</option>
-                  <option value="PAR">Parcial (PAR)</option>
-                  <option value="FIN">Final (FIN)</option>
-                  <option value="PRO">Promoción (PRO)</option>
-                </select>
-              </div>
+                {/* Filtro Tipo */}
+                <div className="col-6 col-md-3">
+                  <label htmlFor="filtro-tipo" className="form-label small fw-semibold text-secondary mb-1">
+                    Tipo de examen
+                  </label>
+                  <select
+                    id="filtro-tipo"
+                    className="form-select"
+                    value={filtroTipo}
+                    onChange={(e) => setFiltroTipo(e.target.value)}
+                  >
+                    <option value="TODOS">Todos los tipos</option>
+                    <option value="PAR">Parcial (PAR)</option>
+                    <option value="FIN">Final (FIN)</option>
+                    <option value="PRO">Promoción (PRO)</option>
+                  </select>
+                </div>
 
-              {/* Filtro Condición */}
-              <div className="col-6 col-md-2">
-                <label htmlFor="filtro-condicion" className="form-label small fw-semibold text-secondary mb-1">
-                  Resultado
-                </label>
-                <select
-                  id="filtro-condicion"
-                  className="form-select"
-                  value={filtroCondicion}
-                  onChange={(e) => setFiltroCondicion(e.target.value)}
-                >
-                  <option value="TODOS">Todos</option>
-                  <option value="APROBADO">Aprobados</option>
-                  <option value="DESAPROBADO">Desaprobados</option>
-                  <option value="PENDIENTE">Pendientes</option>
-                </select>
-              </div>
+                {/* Filtro Condición */}
+                <div className="col-6 col-md-2">
+                  <label htmlFor="filtro-condicion" className="form-label small fw-semibold text-secondary mb-1">
+                    Resultado
+                  </label>
+                  <select
+                    id="filtro-condicion"
+                    className="form-select"
+                    value={filtroCondicion}
+                    onChange={(e) => setFiltroCondicion(e.target.value)}
+                  >
+                    <option value="TODOS">Todos</option>
+                    <option value="APROBADO">Aprobados</option>
+                    <option value="DESAPROBADO">Desaprobados</option>
+                    <option value="PENDIENTE">Pendientes</option>
+                  </select>
+                </div>
 
-              {/* Botón limpiar */}
-              <div className="col-12 col-md-2 d-flex align-items-end pt-md-4">
-                <button
-                  type="button"
-                  className="btn btn-outline-secondary w-100"
-                  onClick={handleLimpiarFiltros}
-                  disabled={!tieneFiltrosActivos}
-                >
-                  Limpiar filtros
-                </button>
+                {/* Botón limpiar */}
+                <div className="col-12 col-md-2 d-flex align-items-end pt-md-4">
+                  <button
+                    type="button"
+                    className="btn btn-outline-secondary w-100"
+                    onClick={handleLimpiarFiltros}
+                    disabled={!tieneFiltrosActivos}
+                  >
+                    Limpiar filtros
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Manejo de Error */}
         {error && (
@@ -347,11 +349,11 @@ function ExamenesList() {
               <div className="card border-0 shadow-sm text-center py-5 px-3">
                 <div className="card-body">
                   <span className="display-4 text-muted mb-3 d-inline-block">📝</span>
-                  <h3 className="h4 fw-bold">No hay exámenes registrados</h3>
-                  <p className="text-secondary mx-auto" style={{ maxWidth: '480px' }}>
-                    Aún no tienes mesas de examen ni calificaciones registradas en la plataforma.
+                  <h3 className="h4 fw-bold">Aún no tienes exámenes registrados</h3>
+                  <p className="text-secondary mx-auto mb-4" style={{ maxWidth: '500px' }}>
+                    ¡No te quedes atrás! Registra tus mesas de examen y notas obtenidas para llevar el control de tus fechas y ver el cálculo de tus promedios.
                   </p>
-                  <Link to="/" className="btn btn-primary mt-2">
+                  <Link to="/" className="btn btn-outline-primary mt-2">
                     Volver al Panel Principal
                   </Link>
                 </div>

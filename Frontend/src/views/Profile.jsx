@@ -2,15 +2,19 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth.js'
 import { academicService } from '../services/academicService.js'
+import { authService } from '../services/authService.js'
 import { getRoleBadge, getRoleLabel } from '../utils/roles.js'
 import { obtenerSemaforo } from '../utils/progress.js'
 
 function Profile() {
-  const { user, logout } = useAuth()
+  const { user, updateUser, refreshUser, logout } = useAuth()
   const navigate = useNavigate()
 
   const [dashboard, setDashboard] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [editandoCarrera, setEditandoCarrera] = useState(false)
+  const [carreraInput, setCarreraInput] = useState(user?.plan_estudio_nombre || '')
+  const [guardandoCarrera, setGuardandoCarrera] = useState(false)
 
   useEffect(() => {
     let isMounted = true
@@ -35,6 +39,21 @@ function Profile() {
   const handleLogout = async () => {
     await logout()
     navigate('/login', { replace: true })
+  }
+
+  const handleGuardarCarrera = async () => {
+    const nueva = carreraInput.trim()
+    setGuardandoCarrera(true)
+    try {
+      await authService.updateProfile({ plan_estudio_nombre: nueva })
+      updateUser?.({ plan_estudio_nombre: nueva })
+      await refreshUser?.()
+      setEditandoCarrera(false)
+    } catch {
+      // Manejo silencioso o feedback en UI
+    } finally {
+      setGuardandoCarrera(false)
+    }
   }
 
   const semaforo = obtenerSemaforo(dashboard?.avance?.porcentaje || 0)
@@ -87,11 +106,56 @@ function Profile() {
               <hr className="my-3" />
 
               <div className="text-start small">
-                <div className="mb-2">
-                  <span className="text-secondary d-block">Plan de Estudio:</span>
-                  <span className="fw-semibold text-dark">
-                    {user?.plan_estudio_nombre || 'Plataforma General de Carrera'}
-                  </span>
+                <div className="mb-3">
+                  <span className="text-secondary d-block">Plan de Estudio / Carrera:</span>
+                  {editandoCarrera ? (
+                    <div className="input-group input-group-sm mt-1">
+                      <input
+                        type="text"
+                        className="form-control"
+                        placeholder="Ej. Medicina, Sistemas..."
+                        value={carreraInput}
+                        onChange={(e) => setCarreraInput(e.target.value)}
+                        disabled={guardandoCarrera}
+                        autoFocus
+                      />
+                      <button
+                        type="button"
+                        className="btn btn-primary"
+                        onClick={handleGuardarCarrera}
+                        disabled={guardandoCarrera || !carreraInput.trim()}
+                      >
+                        {guardandoCarrera ? '...' : 'Guardar'}
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-outline-secondary"
+                        onClick={() => {
+                          setEditandoCarrera(false)
+                          setCarreraInput(user?.plan_estudio_nombre || '')
+                        }}
+                        disabled={guardandoCarrera}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="d-flex align-items-center justify-content-between mt-1">
+                      <span className="fw-semibold text-dark">
+                        {user?.plan_estudio_nombre || 'Sin carrera asignada'}
+                      </span>
+                      <button
+                        type="button"
+                        className="btn btn-outline-primary btn-sm py-0 px-2 small"
+                        onClick={() => {
+                          setCarreraInput(user?.plan_estudio_nombre || '')
+                          setEditandoCarrera(true)
+                        }}
+                      >
+                        ✏️ Editar
+                      </button>
+                    </div>
+                  )}
                 </div>
                 <div className="mb-2">
                   <span className="text-secondary d-block">ID de Usuario:</span>

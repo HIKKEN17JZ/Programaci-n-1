@@ -133,6 +133,29 @@ Algoritmos y Estructuras;1;10;8;Aprobada;sí`
       assert.equal(resultado.materiasValidas[0].es_promocionable, true)
     })
 
+    it('detecta el nombre de la carrera en comentarios de cabecera (# Carrera: ...)', () => {
+      const contenido = `# Carrera: Medicina
+nombre,año_dictado,creditos_totales,horas_semanales,estado,es_promocionable
+Anatomía,1,10,8,CUR,si
+Histología,1,8,6,PEN,no`
+
+      const resultado = parsearCSVMaterias(contenido)
+      assert.equal(resultado.carreraDetectada, 'Medicina')
+      assert.equal(resultado.materiasValidas.length, 2)
+      assert.equal(resultado.errores.length, 0)
+    })
+
+    it('detecta el nombre de la carrera sin numeral al inicio (Carrera: Medicina)', () => {
+      const contenido = `Carrera: Medicina
+nombre,año_dictado,creditos_totales,horas_semanales,estado,es_promocionable
+Bioquímica,1,8,6,CUR,si`
+
+      const resultado = parsearCSVMaterias(contenido)
+      assert.equal(resultado.carreraDetectada, 'Medicina')
+      assert.equal(resultado.materiasValidas.length, 1)
+      assert.equal(resultado.errores.length, 0)
+    })
+
     it('ignora líneas vacías y espacios residuales', () => {
       const contenido = `
 nombre,año_dictado,creditos_totales,horas_semanales,estado,es_promocionable

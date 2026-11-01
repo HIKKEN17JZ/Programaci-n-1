@@ -119,6 +119,31 @@ describe('Cliente API HTTP (TP8 - TDD)', () => {
     assert.strictEqual(capturedBody, JSON.stringify({ username: 'nuevo' }))
   })
 
+  it('serializa el body y realiza petición con método PATCH', async () => {
+    let capturedMethod = ''
+    let capturedBody = ''
+    const mockFetch = async (url, options) => {
+      capturedMethod = options.method
+      capturedBody = options.body
+      return {
+        ok: true,
+        status: 200,
+        headers: new Headers({ 'content-type': 'application/json' }),
+        json: async () => ({ id: 1, plan_estudio_nombre: 'Medicina' }),
+      }
+    }
+
+    const client = createApiClient({
+      baseUrl: 'http://localhost:8000/api',
+      customFetch: mockFetch,
+    })
+
+    const res = await client.patch('/users/me/', { plan_estudio_nombre: 'Medicina' })
+    assert.strictEqual(capturedMethod, 'PATCH')
+    assert.strictEqual(capturedBody, JSON.stringify({ plan_estudio_nombre: 'Medicina' }))
+    assert.strictEqual(res.plan_estudio_nombre, 'Medicina')
+  })
+
   it('lanza ApiError con status y datos cuando el servidor responde con error', async () => {
     const mockFetch = async () => ({
       ok: false,

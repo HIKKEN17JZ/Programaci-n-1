@@ -66,7 +66,29 @@ function Home() {
     }
   }
 
-  const planNombre = user?.plan_estudio_nombre || 'Plataforma de Gestión de Carrera'
+  const tieneMaterias = (dashboard?.materias || []).length > 0
+  const carreraNombre = user?.plan_estudio_nombre?.trim()
+
+  // Determinar encabezado contextual y motivacional del Hero Banner
+  let heroBadge
+  let heroTitulo
+  let heroSubtitulo
+
+  if (carreraNombre) {
+    heroBadge = 'Plan de estudio activo'
+    heroTitulo = carreraNombre
+    heroSubtitulo = tieneMaterias
+      ? `¿Futuro profesional en ${carreraNombre}? Aquí tienes tu avance, materias y mesas de examen en tiempo real.`
+      : `Plan de estudio: ${carreraNombre}. Aún no tienes asignaturas cargadas. Carga tus materias para ver tu progreso.`
+  } else if (!tieneMaterias) {
+    heroBadge = 'Sin carrera activa'
+    heroTitulo = 'Actualmente no estás cursando una carrera'
+    heroSubtitulo = 'Aún no tienes asignaturas registradas. Carga tu plan de estudios o importa tus materias para iniciar tu seguimiento académico.'
+  } else {
+    heroBadge = 'Trayectoria en curso'
+    heroTitulo = 'Tu Carrera Universitaria'
+    heroSubtitulo = 'Seguimiento de materias, mesas de examen y avance de plan de estudio en tiempo real.'
+  }
 
   return (
     <main className="flex-grow-1 pb-5">
@@ -74,13 +96,13 @@ function Home() {
       <section className="bg-primary text-white text-center py-3 py-md-4 shadow-sm">
         <div className="container">
           <span className="badge rounded-pill text-bg-light text-primary mb-2">
-            Seguimiento académico
+            {heroBadge}
           </span>
           <h1 className="h3 fw-bold mb-1">
-            {user ? `¡Hola, ${user.username}!` : 'Plataforma de Gestión de Carrera'}
+            {heroTitulo}
           </h1>
           <p className="small text-white-50 mx-auto mb-0" style={{ maxWidth: '580px' }}>
-            {planNombre}. Plan de estudio, mesas de examen y progreso académico en tiempo real.
+            {heroSubtitulo}
           </p>
         </div>
       </section>
