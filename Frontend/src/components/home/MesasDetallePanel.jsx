@@ -96,7 +96,7 @@ function MesasDetallePanel({ mesas = [], metricasExamenes = {} }) {
                         className={`badge ${
                           m.nota === null
                             ? 'text-bg-secondary'
-                            : Number(m.nota) >= 4
+                            : Number(m.nota) >= 6
                             ? 'text-bg-success'
                             : 'text-bg-danger'
                         } fs-6 px-3 py-1`}

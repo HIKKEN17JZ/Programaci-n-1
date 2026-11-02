@@ -138,7 +138,13 @@ function MateriaDetail() {
 
   const handleModalExamenSuccess = (res, accion) => {
     const accionTxt = accion === 'CREATE' ? 'registrado' : 'actualizado'
-    setFeedback({ tipo: 'success', mensaje: `Examen ${accionTxt} exitosamente.` })
+    const esAprobado = res?.nota !== null && res?.nota !== undefined && Number(res.nota) >= 6
+    setFeedback({
+      tipo: 'success',
+      mensaje: esAprobado
+        ? `¡Felicitaciones! Examen ${accionTxt} con éxito (${res.nota} pts). La materia ha quedado Aprobada automáticamente.`
+        : `Examen ${accionTxt} exitosamente.`,
+    })
     setRecarga((prev) => prev + 1)
   }
 
@@ -341,7 +347,7 @@ function MateriaDetail() {
                       <tbody>
                         {examenes.map((ex) => {
                           const notaNum = ex.nota !== null && ex.nota !== undefined ? Number(ex.nota) : null
-                          const aprobado = notaNum !== null && notaNum >= 4
+                          const aprobado = notaNum !== null && notaNum >= 6
 
                           return (
                             <tr key={ex.id}>
@@ -407,6 +413,7 @@ function MateriaDetail() {
         <MateriaModal
           isOpen={materiaModalOpen}
           materiaAEditar={materia}
+          tieneExamenAprobado={examenes.some((ex) => ex?.nota !== null && ex?.nota !== undefined && Number(ex.nota) >= 6)}
           onClose={() => setMateriaModalOpen(false)}
           onSuccess={handleModalMateriaSuccess}
         />

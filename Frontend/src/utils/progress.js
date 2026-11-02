@@ -181,12 +181,25 @@ export function formatearMesaExamen(examen = {}, materias = []) {
   }
 }
 
+export const NOTA_MINIMA_APROBACION = 6
+
+/**
+ * Determina si una calificación es aprobatoria (nota >= 6).
+ * @param {number|string|null|undefined} nota
+ * @returns {boolean}
+ */
+export function isNotaAprobada(nota) {
+  if (nota === null || nota === undefined || nota === '') return false
+  const num = Number(nota)
+  return !Number.isNaN(num) && num >= NOTA_MINIMA_APROBACION
+}
+
 /**
  * Calcula el promedio numérico a partir de una lista de exámenes.
  *
  * @param {Array} examenes - Lista de exámenes con propiedad nota.
  * @param {object} [opciones]
- * @param {boolean} [opciones.soloAprobados=false] - Si es true, considera solo notas >= 4.
+ * @param {boolean} [opciones.soloAprobados=false] - Si es true, considera solo notas >= 6.
  * @returns {number} Promedio con hasta 2 decimales (0 si no hay notas válidas).
  */
 export function calcularPromedio(examenes = [], { soloAprobados = false } = {}) {
@@ -197,7 +210,7 @@ export function calcularPromedio(examenes = [], { soloAprobados = false } = {}) 
   const notasValidas = examenes
     .map((e) => (e && e.nota !== null && e.nota !== undefined && e.nota !== '' ? Number(e.nota) : null))
     .filter((n) => n !== null && !Number.isNaN(n))
-    .filter((n) => (!soloAprobados ? true : n >= 4))
+    .filter((n) => (!soloAprobados ? true : n >= NOTA_MINIMA_APROBACION))
 
   if (notasValidas.length === 0) {
     return 0
@@ -211,19 +224,21 @@ export function calcularPromedio(examenes = [], { soloAprobados = false } = {}) 
  * Genera métricas consolidadas sobre el historial de exámenes.
  *
  * @param {Array} examenes - Lista de exámenes.
- * @returns {{ total: number, rendidos: number, aprobados: number, promedioGeneral: number, promedioAprobados: number }}
+ * @returns {{ total: number, rendidos: number, aprobados: number, aplazados: number, promedioGeneral: number, promedioAprobados: number }}
  */
 export function calcularMetricasExamenes(examenes = []) {
   const lista = Array.isArray(examenes) ? examenes : []
   const conNota = lista.filter(
     (e) => e && e.nota !== null && e.nota !== undefined && e.nota !== '' && !Number.isNaN(Number(e.nota))
   )
-  const aprobados = conNota.filter((e) => Number(e.nota) >= 4)
+  const aprobados = conNota.filter((e) => Number(e.nota) >= NOTA_MINIMA_APROBACION)
+  const aplazados = conNota.filter((e) => Number(e.nota) < NOTA_MINIMA_APROBACION)
 
   return {
     total: lista.length,
     rendidos: conNota.length,
     aprobados: aprobados.length,
+    aplazados: aplazados.length,
     promedioGeneral: calcularPromedio(lista, { soloAprobados: false }),
     promedioAprobados: calcularPromedio(lista, { soloAprobados: true }),
   }

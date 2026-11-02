@@ -26,6 +26,7 @@ import {
 function MateriasList() {
   const { user } = useAuth()
   const [materias, setMaterias] = useState([])
+  const [examenes, setExamenes] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [busqueda, setBusqueda] = useState('')
@@ -45,11 +46,14 @@ function MateriasList() {
   useEffect(() => {
     let isMounted = true
 
-    academicService
-      .getMaterias()
-      .then((data) => {
+    Promise.all([
+      academicService.getMaterias(),
+      academicService.getExamenes().catch(() => []),
+    ])
+      .then(([materiasData, examenesData]) => {
         if (isMounted) {
-          setMaterias(data)
+          setMaterias(materiasData)
+          setExamenes(examenesData)
         }
       })
       .catch((err) => {
@@ -67,6 +71,18 @@ function MateriasList() {
       isMounted = false
     }
   }, [recarga])
+
+  const materiasAprobadasPorExamen = useMemo(() => {
+    const ids = new Set()
+    for (const ex of examenes) {
+      const nota = ex?.nota !== null && ex?.nota !== undefined ? Number(ex.nota) : null
+      if (nota !== null && nota >= 6) {
+        const matId = typeof ex.materia === 'object' ? ex.materia?.id : ex.materia
+        if (matId) ids.add(Number(matId))
+      }
+    }
+    return ids
+  }, [examenes])
 
   const añosDisponibles = useMemo(() => obtenerAñosDisponibles(materias), [materias])
   const estadisticas = useMemo(() => calcularEstadisticasMaterias(materias), [materias])
@@ -445,6 +461,7 @@ function MateriasList() {
                             {puedeGestionar ? (
                               <QuickStatusSelect
                                 materia={materia}
+                                tieneExamenAprobado={materiasAprobadasPorExamen.has(Number(materia.id))}
                                 onEstadoActualizado={handleEstadoActualizado}
                               />
                             ) : (
@@ -529,6 +546,7 @@ function MateriasList() {
       <MateriaModal
         isOpen={materiaModalOpen}
         materiaAEditar={materiaSeleccionada}
+        tieneExamenAprobado={materiaSeleccionada ? materiasAprobadasPorExamen.has(Number(materiaSeleccionada.id)) : false}
         onClose={() => setMateriaModalOpen(false)}
         onSuccess={handleModalSuccess}
       />

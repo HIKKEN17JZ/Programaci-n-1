@@ -321,6 +321,36 @@ class ExamenTests(BaseAPITestCase):
         response = self.client.post('/api/examenes/', payload)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
+    def test_create_examen_aprobado_auto_aprueba_materia(self):
+        """Crear examen con nota >= 6 actualiza automáticamente el estado de la materia a APR."""
+        self.client.force_authenticate(user=self.docente1)
+        self.assertEqual(self.materia_docente1.estado, 'CUR')
+        payload = {
+            'materia': self.materia_docente1.id,
+            'fecha': '2026-08-10',
+            'nota': 8.0,
+            'tipo': 'FIN'
+        }
+        response = self.client.post('/api/examenes/', payload)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.materia_docente1.refresh_from_db()
+        self.assertEqual(self.materia_docente1.estado, 'APR')
+
+    def test_create_examen_desaprobado_no_aprueba_materia(self):
+        """Crear examen con nota < 6 mantiene el estado previo de la materia."""
+        self.client.force_authenticate(user=self.docente1)
+        self.assertEqual(self.materia_docente1.estado, 'CUR')
+        payload = {
+            'materia': self.materia_docente1.id,
+            'fecha': '2026-08-10',
+            'nota': 4.0,
+            'tipo': 'FIN'
+        }
+        response = self.client.post('/api/examenes/', payload)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.materia_docente1.refresh_from_db()
+        self.assertEqual(self.materia_docente1.estado, 'CUR')
+
     def test_create_examen_as_estudiante_forbidden(self):
         """ESTUDIANTE no puede crear exámenes para materias que no le pertenecen."""
         self.client.force_authenticate(user=self.estudiante)

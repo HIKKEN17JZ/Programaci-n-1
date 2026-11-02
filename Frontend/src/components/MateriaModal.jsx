@@ -3,7 +3,7 @@ import { academicService } from '../services/academicService.js'
 import { validarFormularioMateria, ESTADOS_VALIDOS_MATERIA } from '../utils/academicValidators.js'
 import { ESTADO_BADGE, obtenerEtiquetaEstado } from '../utils/progress.js'
 
-function MateriaModalForm({ materiaAEditar, onClose, onSuccess }) {
+function MateriaModalForm({ materiaAEditar, tieneExamenAprobado = false, onClose, onSuccess }) {
   const [nombre, setNombre] = useState(materiaAEditar?.nombre || '')
   const [añoDictado, setAñoDictado] = useState(
     materiaAEditar?.año_dictado ?? 1
@@ -170,13 +170,23 @@ function MateriaModalForm({ materiaAEditar, onClose, onSuccess }) {
                   onChange={(e) => setEstado(e.target.value)}
                   disabled={loading}
                 >
-                  {ESTADOS_VALIDOS_MATERIA.map((cod) => (
-                    <option key={cod} value={cod}>
-                      {obtenerEtiquetaEstado(cod)} ({ESTADO_BADGE[cod]?.texto || cod})
-                    </option>
-                  ))}
+                  {ESTADOS_VALIDOS_MATERIA.map((cod) => {
+                    const bloqueadoApr = cod === 'APR' && materiaAEditar?.estado !== 'APR' && !tieneExamenAprobado
+                    return (
+                      <option key={cod} value={cod} disabled={bloqueadoApr}>
+                        {bloqueadoApr
+                          ? '🔒 Aprobada (requiere examen ≥ 6)'
+                          : `${obtenerEtiquetaEstado(cod)} (${ESTADO_BADGE[cod]?.texto || cod})`}
+                      </option>
+                    )
+                  })}
                 </select>
                 {errores.estado && <div className="invalid-feedback">{errores.estado}</div>}
+                {materiaAEditar?.estado !== 'APR' && !tieneExamenAprobado && (
+                  <div className="form-text text-muted" style={{ fontSize: '0.78rem' }}>
+                    💡 Para asentar la materia como <strong>Aprobada</strong>, se debe registrar su mesa de examen aprobada (nota ≥ 6) en Mesas de Examen.
+                  </div>
+                )}
               </div>
 
               {/* Promocionable */}
@@ -233,13 +243,14 @@ function MateriaModalForm({ materiaAEditar, onClose, onSuccess }) {
   )
 }
 
-function MateriaModal({ isOpen, materiaAEditar, onClose, onSuccess }) {
+function MateriaModal({ isOpen, materiaAEditar, tieneExamenAprobado = false, onClose, onSuccess }) {
   if (!isOpen) return null
 
   return (
     <MateriaModalForm
       key={materiaAEditar ? `edit-${materiaAEditar.id}` : 'new'}
       materiaAEditar={materiaAEditar}
+      tieneExamenAprobado={tieneExamenAprobado}
       onClose={onClose}
       onSuccess={onSuccess}
     />

@@ -83,8 +83,8 @@ function ExamenesList() {
       if (filtroCondicion !== 'TODOS') {
         const nota = ex.nota !== null && ex.nota !== undefined ? Number(ex.nota) : null
         if (filtroCondicion === 'PENDIENTE' && nota !== null) return false
-        if (filtroCondicion === 'APROBADO' && (nota === null || nota < 4)) return false
-        if (filtroCondicion === 'DESAPROBADO' && (nota === null || nota >= 4)) return false
+        if (filtroCondicion === 'APROBADO' && (nota === null || nota < 6)) return false
+        if (filtroCondicion === 'DESAPROBADO' && (nota === null || nota >= 6)) return false
       }
 
       return true
@@ -145,9 +145,13 @@ function ExamenesList() {
 
   const handleModalSuccess = (resultado, accion) => {
     const accionTxt = accion === 'CREATE' ? 'registrado' : 'actualizado'
+    const esAprobado = resultado?.nota !== null && resultado?.nota !== undefined && Number(resultado.nota) >= 6
+    const formatted = formatearMesaExamen(resultado, materias)
     setFeedback({
       tipo: 'success',
-      mensaje: `Examen ${accionTxt} exitosamente.`,
+      mensaje: esAprobado
+        ? `¡Felicitaciones! Examen ${accionTxt} con éxito (Nota ${resultado.nota}). "${formatted.materia}" ha quedado Aprobada automáticamente.`
+        : `Examen ${accionTxt} exitosamente.`,
     })
     setRecarga((prev) => prev + 1)
   }
@@ -298,8 +302,8 @@ function ExamenesList() {
                     onChange={(e) => setFiltroCondicion(e.target.value)}
                   >
                     <option value="TODOS">Todos</option>
-                    <option value="APROBADO">Aprobados</option>
-                    <option value="DESAPROBADO">Desaprobados</option>
+                    <option value="APROBADO">Aprobados (≥ 6)</option>
+                    <option value="DESAPROBADO">Desaprobados (&lt; 6)</option>
                     <option value="PENDIENTE">Pendientes</option>
                   </select>
                 </div>
@@ -388,7 +392,7 @@ function ExamenesList() {
                     <tbody>
                       {examenesFiltrados.map((ex) => {
                         const notaNum = ex.nota !== null && ex.nota !== undefined ? Number(ex.nota) : null
-                        const aprobado = notaNum !== null && notaNum >= 4
+                        const aprobado = notaNum !== null && notaNum >= 6
 
                         return (
                           <tr key={ex.id}>

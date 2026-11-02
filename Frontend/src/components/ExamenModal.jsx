@@ -169,9 +169,16 @@ function ExamenModalForm({
 
               {/* Calificación / Nota */}
               <div className="mb-2">
-                <label htmlFor="examenNota" className="form-label fw-semibold small">
-                  Calificación Obtenida (0 a 10)
-                </label>
+                <div className="d-flex justify-content-between align-items-center mb-1">
+                  <label htmlFor="examenNota" className="form-label fw-semibold small mb-0">
+                    Calificación Obtenida (0 a 10)
+                  </label>
+                  {nota.trim() !== '' && !isNaN(Number(nota)) && (
+                    <span className={`badge ${Number(nota) >= 6 ? 'text-bg-success' : 'text-bg-danger'} small`}>
+                      {Number(nota) >= 6 ? '✓ Aprobado (≥ 6)' : '⚠ Desaprobado (< 6)'}
+                    </span>
+                  )}
+                </div>
                 <input
                   id="examenNota"
                   type="number"
@@ -186,7 +193,7 @@ function ExamenModalForm({
                 />
                 {errores.nota && <div className="invalid-feedback">{errores.nota}</div>}
                 <div className="form-text small">
-                  Opcional: Si el examen aún no fue corregido, podés registrarlo sin nota y calificarlo luego.
+                  Escala de 0 a 10. Se aprueba con nota 6 o superior. Dejar vacío si aún no fue calificado.
                 </div>
               </div>
             </div>

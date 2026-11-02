@@ -198,9 +198,9 @@ describe('Utilidades de Progreso Académico', () => {
       assert.strictEqual(calcularPromedio(examenes), 6.0)
     })
 
-    it('calcularPromedio soporta calcular solo sobre exámenes aprobados (nota >= 4)', () => {
-      // Aprobadas: 8 + 4 + 10 = 22 / 3 = 7.33
-      assert.strictEqual(calcularPromedio(examenes, { soloAprobados: true }), 7.33)
+    it('calcularPromedio soporta calcular solo sobre exámenes aprobados (nota >= 6)', () => {
+      // Aprobadas (>= 6): 8 + 10 = 18 / 2 = 9.00
+      assert.strictEqual(calcularPromedio(examenes, { soloAprobados: true }), 9.0)
     })
 
     it('calcularPromedio devuelve 0 de forma segura si no hay exámenes con nota', () => {
@@ -209,13 +209,14 @@ describe('Utilidades de Progreso Académico', () => {
       assert.strictEqual(calcularPromedio([{ nota: null }, { nota: undefined }]), 0)
     })
 
-    it('calcularMetricasExamenes consolida totales, rendidos, aprobados y promedios', () => {
+    it('calcularMetricasExamenes consolida totales, rendidos, aprobados, aplazados y promedios', () => {
       const metricas = calcularMetricasExamenes(examenes)
       assert.strictEqual(metricas.total, 5)
       assert.strictEqual(metricas.rendidos, 4)
-      assert.strictEqual(metricas.aprobados, 3)
+      assert.strictEqual(metricas.aprobados, 2)
+      assert.strictEqual(metricas.aplazados, 2)
       assert.strictEqual(metricas.promedioGeneral, 6.0)
-      assert.strictEqual(metricas.promedioAprobados, 7.33)
+      assert.strictEqual(metricas.promedioAprobados, 9.0)
     })
   })
 })

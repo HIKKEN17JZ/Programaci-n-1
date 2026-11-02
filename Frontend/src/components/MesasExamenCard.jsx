@@ -13,7 +13,15 @@ function MesasExamenCard({ mesas }) {
               {mesas.map((mesa) => (
                 <li key={mesa.id || `${mesa.materia}-${mesa.fecha}`} className="d-flex justify-content-between align-items-center mb-2">
                   <span className="me-2 text-break">{mesa.materia} — {mesa.llamado}</span>
-                  <span className={`badge ${mesa.nota === null ? 'text-bg-secondary' : 'text-bg-success'} text-nowrap`}>
+                  <span
+                    className={`badge ${
+                      mesa.nota === null
+                        ? 'text-bg-secondary'
+                        : Number(mesa.nota) >= 6
+                        ? 'text-bg-success'
+                        : 'text-bg-danger'
+                    } text-nowrap`}
+                  >
                     {mesa.nota === null ? 'Pendiente' : `Nota ${mesa.nota}`}
                   </span>
                 </li>
