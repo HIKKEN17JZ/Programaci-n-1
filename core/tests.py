@@ -409,7 +409,7 @@ class ExamenTests(BaseAPITestCase):
         self.assertIn('nota', response.data)
 
     def test_validation_nota_null_allowed(self):
-        """Examen con nota null (sin calificar aún) es permitido (201 Created)."""
+        """Examen final con nota null (sin calificar aún) es permitido (201 Created)."""
         self.client.force_authenticate(user=self.docente1)
         payload = {
             'materia': self.materia_docente1.id,
@@ -420,6 +420,62 @@ class ExamenTests(BaseAPITestCase):
         response = self.client.post('/api/examenes/', payload, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertIsNone(response.data['nota'])
+
+    def test_promocion_nota_menor_a_6_rechazada(self):
+        """Una promoción con nota < 6 debe ser rechazada con 400 Bad Request."""
+        self.client.force_authenticate(user=self.docente1)
+        payload = {
+            'materia': self.materia_docente1.id,
+            'fecha': '2026-07-20',
+            'nota': 5.0,
+            'tipo': 'PRO'
+        }
+        response = self.client.post('/api/examenes/', payload)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('nota', response.data)
+
+    def test_promocion_sin_nota_rechazada(self):
+        """Una promoción sin nota debe ser rechazada con 400 Bad Request."""
+        self.client.force_authenticate(user=self.docente1)
+        payload = {
+            'materia': self.materia_docente1.id,
+            'fecha': '2026-07-20',
+            'nota': None,
+            'tipo': 'PRO'
+        }
+        response = self.client.post('/api/examenes/', payload, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('nota', response.data)
+
+    def test_promocion_nota_valida_crea_y_aprueba_materia(self):
+        """Una promoción con nota >= 6 se crea exitosamente y auto-aprueba la materia."""
+        self.client.force_authenticate(user=self.docente1)
+        payload = {
+            'materia': self.materia_docente1.id,
+            'fecha': '2026-07-20',
+            'nota': 8.0,
+            'tipo': 'PRO'
+        }
+        response = self.client.post('/api/examenes/', payload)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.materia_docente1.refresh_from_db()
+        self.assertEqual(self.materia_docente1.estado, 'APR')
+
+    def test_create_examen_for_already_approved_materia_rejected(self):
+        """Intento de crear un nuevo examen para una materia ya aprobada devuelve 400 Bad Request."""
+        self.materia_docente1.estado = 'APR'
+        self.materia_docente1.save()
+
+        self.client.force_authenticate(user=self.docente1)
+        payload = {
+            'materia': self.materia_docente1.id,
+            'fecha': '2026-07-20',
+            'nota': 7.0,
+            'tipo': 'FIN'
+        }
+        response = self.client.post('/api/examenes/', payload)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('materia', response.data)
 
     def test_delete_other_user_examen_by_docente_forbidden(self):
         """DOCENTE no puede eliminar exámenes de materias ajenas."""

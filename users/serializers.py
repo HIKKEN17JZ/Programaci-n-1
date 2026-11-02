@@ -1,6 +1,12 @@
 from rest_framework import serializers
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from users.models import User
 from core.models import Facultad
+
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    default_error_messages = {
+        'no_active_account': 'Usuario o contraseña incorrectos. Por favor, verificá tus datos e intentalo nuevamente.'
+    }
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:

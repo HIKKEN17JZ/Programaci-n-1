@@ -13,6 +13,7 @@ import {
 import MateriaModal from '../components/MateriaModal.jsx'
 import ExamenModal from '../components/ExamenModal.jsx'
 import ConfirmModal from '../components/ConfirmModal.jsx'
+import { activityLogService } from '../services/activityLogService.js'
 
 function MateriaDetail() {
   const { id } = useParams()
@@ -87,7 +88,24 @@ function MateriaDetail() {
     if (!materia) return
     setDeleting(true)
     try {
+      const examenesAsociados = examenes || []
       await academicService.deleteMateria(materia.id)
+      activityLogService.registrarAccion({
+        accion: 'ELIMINAR',
+        entidad: 'MATERIA',
+        detalle: `Asignatura eliminada: "${materia.nombre}" (${formatearNivelCarrera(materia.año_dictado)})`,
+        idReferencia: materia.id,
+        userId: user?.id,
+      })
+      examenesAsociados.forEach((ex) => {
+        activityLogService.registrarAccion({
+          accion: 'ELIMINAR',
+          entidad: 'EXAMEN',
+          detalle: `Mesa de examen eliminada por baja de "${materia.nombre}": llamado ${ex.tipo}`,
+          idReferencia: ex.id,
+          userId: user?.id,
+        })
+      })
       navigate('/materias', {
         replace: true,
         state: {
@@ -125,6 +143,13 @@ function MateriaDetail() {
     setDeleting(true)
     try {
       await academicService.deleteExamen(examenAEliminar.id)
+      activityLogService.registrarAccion({
+        accion: 'ELIMINAR',
+        entidad: 'EXAMEN',
+        detalle: `Mesa de examen eliminada: ${TIPO_EXAMEN_LABEL[examenAEliminar.tipo] || examenAEliminar.tipo} en "${materia?.nombre || 'Materia'}"`,
+        idReferencia: examenAEliminar.id,
+        userId: user?.id,
+      })
       setFeedback({ tipo: 'success', mensaje: 'Examen eliminado del historial correctamente.' })
       setConfirmDeleteExamenOpen(false)
       setExamenAEliminar(null)
@@ -139,6 +164,13 @@ function MateriaDetail() {
   const handleModalExamenSuccess = (res, accion) => {
     const accionTxt = accion === 'CREATE' ? 'registrado' : 'actualizado'
     const esAprobado = res?.nota !== null && res?.nota !== undefined && Number(res.nota) >= 6
+    activityLogService.registrarAccion({
+      accion: accion === 'CREATE' ? 'CREAR' : 'EDITAR',
+      entidad: 'EXAMEN',
+      detalle: `Mesa de examen ${accionTxt} en "${materia?.nombre || 'Materia'}": ${TIPO_EXAMEN_LABEL[res.tipo] || res.tipo} ${res.nota !== null ? `(Nota: ${res.nota})` : '(Sin nota)'}`,
+      idReferencia: res.id,
+      userId: user?.id,
+    })
     setFeedback({
       tipo: 'success',
       mensaje: esAprobado
@@ -261,9 +293,6 @@ function MateriaDetail() {
                   <span className={`badge ${ESTADO_BADGE[materia.estado] || 'text-bg-secondary'} fs-6`}>
                     {obtenerEtiquetaEstado(materia.estado)}
                   </span>
-                  <span className="badge text-bg-light border text-secondary">
-                    ID: #{materia.id}
-                  </span>
                 </div>
                 <h2 className="h4 fw-bold text-dark mb-1">{materia.nombre}</h2>
                 <p className="text-secondary mb-0">
@@ -312,13 +341,19 @@ function MateriaDetail() {
               <div className="card-header bg-white py-3 d-flex justify-content-between align-items-center">
                 <h3 className="h5 fw-bold mb-0">Instancias de Examen y Evaluaciones</h3>
                 {puedeRegistrarExamen && (
-                  <button
-                    type="button"
-                    className="btn btn-outline-primary btn-sm fw-semibold"
-                    onClick={handleAbrirCrearExamen}
-                  >
-                    + Cargar Nota / Examen
-                  </button>
+                  (materia.estado === 'APR' || materia.estado === 'Aprobada') ? (
+                    <span className="badge text-bg-success py-2 px-3 fw-semibold">
+                      ✓ Asignatura Aprobada
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      className="btn btn-outline-primary btn-sm fw-semibold"
+                      onClick={handleAbrirCrearExamen}
+                    >
+                      + Cargar Nota / Examen
+                    </button>
+                  )
                 )}
               </div>
               <div className="card-body p-0">

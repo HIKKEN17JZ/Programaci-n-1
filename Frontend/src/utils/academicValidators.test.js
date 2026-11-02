@@ -3,6 +3,7 @@ import assert from 'node:assert'
 import {
   validarFormularioMateria,
   validarFormularioExamen,
+  filtrarMateriasParaExamen,
 } from './academicValidators.js'
 
 describe('Validadores de Formularios Académicos (TDD - TP9 - Bloque 4)', () => {
@@ -76,7 +77,7 @@ describe('Validadores de Formularios Académicos (TDD - TP9 - Bloque 4)', () => 
     const examenValido = {
       materia: 1,
       fecha: '2026-11-20',
-      tipo: 'PAR',
+      tipo: 'FIN',
       nota: '8.50',
     }
 
@@ -86,12 +87,41 @@ describe('Validadores de Formularios Académicos (TDD - TP9 - Bloque 4)', () => 
       assert.deepStrictEqual(res.errores, {})
     })
 
-    it('permite exámenes sin nota (nota pendiente / acta abierta)', () => {
+    it('permite exámenes finales sin nota (nota pendiente / acta abierta)', () => {
       const resSinNota = validarFormularioExamen({ ...examenValido, nota: '' })
       assert.strictEqual(resSinNota.esValido, true)
 
       const resNull = validarFormularioExamen({ ...examenValido, nota: null })
       assert.strictEqual(resNull.esValido, true)
+    })
+
+    it('permite exámenes finales con notas desaprobadas (< 6)', () => {
+      const resAplazo = validarFormularioExamen({ ...examenValido, tipo: 'FIN', nota: 4 })
+      assert.strictEqual(resAplazo.esValido, true)
+    })
+
+    it('valida exitosamente una promoción con nota aprobatoria (>= 6)', () => {
+      const resPromo6 = validarFormularioExamen({ ...examenValido, tipo: 'PRO', nota: 6 })
+      assert.strictEqual(resPromo6.esValido, true)
+
+      const resPromo10 = validarFormularioExamen({ ...examenValido, tipo: 'PRO', nota: 10 })
+      assert.strictEqual(resPromo10.esValido, true)
+    })
+
+    it('rechaza promoción con nota inferior a 6 con mensaje explicativo', () => {
+      const resPromoReprobada = validarFormularioExamen({ ...examenValido, tipo: 'PRO', nota: 5 })
+      assert.strictEqual(resPromoReprobada.esValido, false)
+      assert.match(resPromoReprobada.errores.nota, /promoción requiere una calificación aprobatoria/i)
+    })
+
+    it('rechaza promoción sin nota informada', () => {
+      const resPromoVacia = validarFormularioExamen({ ...examenValido, tipo: 'PRO', nota: '' })
+      assert.strictEqual(resPromoVacia.esValido, false)
+      assert.match(resPromoVacia.errores.nota, /ingresar una nota igual o superior a 6/i)
+
+      const resPromoNull = validarFormularioExamen({ ...examenValido, tipo: 'PRO', nota: null })
+      assert.strictEqual(resPromoNull.esValido, false)
+      assert.match(resPromoNull.errores.nota, /ingresar una nota igual o superior a 6/i)
     })
 
     it('rechaza si falta la materia asociada', () => {
@@ -109,10 +139,14 @@ describe('Validadores de Formularios Académicos (TDD - TP9 - Bloque 4)', () => 
       assert.strictEqual(resFechaInvalida.esValido, false)
     })
 
-    it('rechaza tipos de examen que no correspondan a PAR, FIN o PRO', () => {
+    it('rechaza exámenes parciales (PAR) y tipos no permitidos en mesas de examen', () => {
+      const resParcial = validarFormularioExamen({ ...examenValido, tipo: 'PAR' })
+      assert.strictEqual(resParcial.esValido, false)
+      assert.match(resParcial.errores.tipo, /Final \(FIN\) o Promoción \(PRO\)/i)
+
       const resTipoInvalido = validarFormularioExamen({ ...examenValido, tipo: 'OTRO' })
       assert.strictEqual(resTipoInvalido.esValido, false)
-      assert.match(resTipoInvalido.errores.tipo, /tipo/i)
+      assert.match(resTipoInvalido.errores.tipo, /Final \(FIN\) o Promoción \(PRO\)/i)
     })
 
     it('rechaza notas numéricas fuera del rango permitido [0, 10]', () => {
@@ -123,6 +157,43 @@ describe('Validadores de Formularios Académicos (TDD - TP9 - Bloque 4)', () => 
       const resExcedida = validarFormularioExamen({ ...examenValido, nota: 10.5 })
       assert.strictEqual(resExcedida.esValido, false)
       assert.match(resExcedida.errores.nota, /nota/i)
+    })
+  })
+
+  describe('filtrarMateriasParaExamen', () => {
+    const materiasPrueba = [
+      { id: 1, nombre: 'Matemática Discreta', estado: 'CUR' },
+      { id: 2, nombre: 'Álgebra Lineal', estado: 'APR' },
+      { id: 3, nombre: 'Programación I', estado: 'REG' },
+      { id: 4, nombre: 'Física I', estado: 'PEN' },
+      { id: 5, nombre: 'Química', estado: 'Aprobada' },
+      { id: 6, nombre: 'Sistemas Operativos', estado: 'REC' },
+    ]
+
+    it('excluye materias aprobadas (APR / Aprobada) al crear un nuevo examen', () => {
+      const disponibles = filtrarMateriasParaExamen(materiasPrueba, null)
+      const ids = disponibles.map((m) => m.id)
+
+      assert.strictEqual(ids.includes(2), false, 'La materia 2 (APR) no debe aparecer')
+      assert.strictEqual(ids.includes(5), false, 'La materia 5 (Aprobada) no debe aparecer')
+      assert.deepStrictEqual(ids, [1, 3, 4, 6])
+    })
+
+    it('conserva la materia aprobada si se está editando un examen perteneciente a ella', () => {
+      const examenDeAlgebra = { id: 99, materia: 2, tipo: 'FIN', nota: 8 }
+      const disponibles = filtrarMateriasParaExamen(materiasPrueba, examenDeAlgebra)
+      const ids = disponibles.map((m) => m.id)
+
+      assert.strictEqual(ids.includes(2), true, 'La materia en edición debe mantenerse visible')
+      assert.strictEqual(ids.includes(5), false, 'Otras materias aprobadas siguen excluidas')
+      assert.deepStrictEqual(ids, [1, 2, 3, 4, 6])
+    })
+
+    it('maneja listas vacías, nulas o elementos inválidos sin fallar', () => {
+      assert.deepStrictEqual(filtrarMateriasParaExamen([]), [])
+      assert.deepStrictEqual(filtrarMateriasParaExamen(null), [])
+      assert.deepStrictEqual(filtrarMateriasParaExamen(undefined), [])
+      assert.deepStrictEqual(filtrarMateriasParaExamen([null, undefined, {}]), [])
     })
   })
 })

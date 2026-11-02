@@ -1,9 +1,12 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { academicService } from '../services/academicService.js'
-import { validarFormularioExamen, TIPOS_VALIDOS_EXAMEN } from '../utils/academicValidators.js'
+import {
+  validarFormularioExamen,
+  filtrarMateriasParaExamen,
+  TIPOS_VALIDOS_EXAMEN,
+} from '../utils/academicValidators.js'
 
 const TIPOS_LABEL = {
-  PAR: 'Examen Parcial',
   FIN: 'Examen Final',
   PRO: 'Instancia de Promoción',
 }
@@ -15,15 +18,28 @@ function ExamenModalForm({
   onClose,
   onSuccess,
 }) {
+  const esEdicion = Boolean(examenAEditar)
+
+  // Materias disponibles: excluye asignaturas ya aprobadas al rendir nuevos exámenes
+  const materiasDisponibles = useMemo(() => {
+    return filtrarMateriasParaExamen(materias, examenAEditar)
+  }, [materias, examenAEditar])
+
   const defaultMateriaId = examenAEditar
     ? (examenAEditar.materia ? String(examenAEditar.materia) : '')
-    : (materiaPreseleccionadaId ? String(materiaPreseleccionadaId) : (materias[0]?.id ? String(materias[0].id) : ''))
+    : (materiaPreseleccionadaId
+        ? String(materiaPreseleccionadaId)
+        : (materiasDisponibles[0]?.id ? String(materiasDisponibles[0].id) : ''))
 
   const [materiaId, setMateriaId] = useState(defaultMateriaId)
   const [fecha, setFecha] = useState(
     examenAEditar?.fecha || new Date().toISOString().slice(0, 10)
   )
-  const [tipo, setTipo] = useState(examenAEditar?.tipo || 'PAR')
+  const [tipo, setTipo] = useState(
+    examenAEditar?.tipo && ['FIN', 'PRO'].includes(examenAEditar.tipo)
+      ? examenAEditar.tipo
+      : 'FIN'
+  )
   const [nota, setNota] = useState(
     examenAEditar?.nota !== null && examenAEditar?.nota !== undefined
       ? String(examenAEditar.nota)
@@ -33,8 +49,6 @@ function ExamenModalForm({
   const [errores, setErrores] = useState({})
   const [serverError, setServerError] = useState('')
   const [loading, setLoading] = useState(false)
-
-  const esEdicion = Boolean(examenAEditar)
 
   const handleSubmit = async (event) => {
     event.preventDefault()
@@ -114,17 +128,31 @@ function ExamenModalForm({
                   className={`form-select ${errores.materia ? 'is-invalid' : ''}`}
                   value={materiaId}
                   onChange={(e) => setMateriaId(e.target.value)}
-                  disabled={loading || Boolean(materiaPreseleccionadaId && !esEdicion)}
+                  disabled={loading || Boolean(materiaPreseleccionadaId && !esEdicion) || (!esEdicion && materiasDisponibles.length === 0)}
                   required
                 >
-                  <option value="">Selecciona una asignatura...</option>
-                  {materias.map((mat) => (
-                    <option key={mat.id} value={mat.id}>
-                      {mat.nombre} ({mat.año_dictado})
-                    </option>
-                  ))}
+                  {materiasDisponibles.length === 0 ? (
+                    <option value="">No hay materias pendientes de rendir</option>
+                  ) : (
+                    <>
+                      <option value="">Selecciona una asignatura...</option>
+                      {materiasDisponibles.map((mat) => (
+                        <option key={mat.id} value={mat.id}>
+                          {mat.nombre} ({mat.año_dictado})
+                        </option>
+                      ))}
+                    </>
+                  )}
                 </select>
                 {errores.materia && <div className="invalid-feedback">{errores.materia}</div>}
+                {!esEdicion && materiasDisponibles.length === 0 && (
+                  <div className="alert alert-success d-flex align-items-center gap-2 mt-2 py-2 px-3 small" role="alert">
+                    <span>🎉</span>
+                    <div>
+                      ¡Todas tus materias se encuentran aprobadas! No tienes asignaturas pendientes para rendir examen.
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="row g-3 mb-3">
@@ -171,29 +199,42 @@ function ExamenModalForm({
               <div className="mb-2">
                 <div className="d-flex justify-content-between align-items-center mb-1">
                   <label htmlFor="examenNota" className="form-label fw-semibold small mb-0">
-                    Calificación Obtenida (0 a 10)
+                    {tipo === 'PRO' ? 'Calificación de la Promoción (mínimo 6) *' : 'Calificación Obtenida (0 a 10)'}
                   </label>
-                  {nota.trim() !== '' && !isNaN(Number(nota)) && (
+                  {nota.trim() !== '' && !isNaN(Number(nota)) ? (
                     <span className={`badge ${Number(nota) >= 6 ? 'text-bg-success' : 'text-bg-danger'} small`}>
-                      {Number(nota) >= 6 ? '✓ Aprobado (≥ 6)' : '⚠ Desaprobado (< 6)'}
+                      {Number(nota) >= 6
+                        ? (tipo === 'PRO' ? '✓ Promoción Aprobada (≥ 6)' : '✓ Aprobado (≥ 6)')
+                        : (tipo === 'PRO' ? '⚠ Inválido: Promoción exige nota ≥ 6' : '⚠ Desaprobado (< 6)')}
                     </span>
-                  )}
+                  ) : tipo === 'PRO' ? (
+                    <span className="badge text-bg-warning text-dark small">
+                      ⚠ Nota requerida ≥ 6
+                    </span>
+                  ) : null}
                 </div>
                 <input
                   id="examenNota"
                   type="number"
                   step="0.25"
-                  min="0"
+                  min={tipo === 'PRO' ? '6' : '0'}
                   max="10"
                   className={`form-control ${errores.nota ? 'is-invalid' : ''}`}
                   value={nota}
                   onChange={(e) => setNota(e.target.value)}
-                  placeholder="Dejar vacío si el acta está abierta / pendiente"
+                  placeholder={
+                    tipo === 'PRO'
+                      ? 'Ingresá la calificación de promoción (entre 6 y 10)'
+                      : 'Dejar vacío si el acta está abierta / pendiente'
+                  }
                   disabled={loading}
+                  required={tipo === 'PRO'}
                 />
                 {errores.nota && <div className="invalid-feedback">{errores.nota}</div>}
                 <div className="form-text small">
-                  Escala de 0 a 10. Se aprueba con nota 6 o superior. Dejar vacío si aún no fue calificado.
+                  {tipo === 'PRO'
+                    ? 'La promoción directa acredita la materia con nota 6 o superior. Si no alcanzaste la promoción, selecciona Examen Final.'
+                    : 'Escala de 0 a 10. Se aprueba con nota 6 o superior. Dejar vacío si aún no fue calificado.'}
                 </div>
               </div>
             </div>
@@ -210,7 +251,7 @@ function ExamenModalForm({
               <button
                 type="submit"
                 className="btn btn-primary btn-sm px-4 fw-semibold"
-                disabled={loading}
+                disabled={loading || (!esEdicion && materiasDisponibles.length === 0)}
               >
                 {loading ? (
                   <>

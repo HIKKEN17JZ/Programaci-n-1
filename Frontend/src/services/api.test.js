@@ -189,4 +189,77 @@ describe('Cliente API HTTP (TP8 - TDD)', () => {
     const result = await client.delete('/materias/1/')
     assert.strictEqual(result, null)
   })
+
+  it('ApiError traduce mensajes de credenciales incorrectas de SimpleJWT a español amigable', () => {
+    const errorData = { detail: 'No active account found with the given credentials' }
+    const err = new ApiError(401, errorData, 'Error por defecto')
+
+    assert.strictEqual(err.status, 401)
+    assert.strictEqual(
+      err.message,
+      'Usuario o contraseña incorrectos. Por favor, verificá tus datos e intentalo nuevamente.'
+    )
+  })
+
+  it('ApiError traduce cuenta de usuario deshabilitada a español', () => {
+    const errorData = { detail: 'User account is disabled.' }
+    const err = new ApiError(401, errorData)
+
+    assert.strictEqual(
+      err.message,
+      'Esta cuenta de usuario ha sido deshabilitada. Comunicate con el administrador.'
+    )
+  })
+
+  it('ApiError traduce credenciales no provistas y permisos denegados a español', () => {
+    const errCred = new ApiError(401, { detail: 'Authentication credentials were not provided.' })
+    assert.strictEqual(errCred.message, 'No has iniciado sesión o no se proporcionaron credenciales.')
+
+    const errPerm = new ApiError(403, { detail: 'You do not have permission to perform this action.' })
+    assert.strictEqual(errPerm.message, 'No tienes permisos para realizar esta acción.')
+  })
+
+  it('ApiError traduce campos obligatorios en inglés a español en validaciones de formulario', () => {
+    const errorData = {
+      nombre: ['This field may not be blank.'],
+      codigo: ['This field is required.'],
+    }
+    const err = new ApiError(400, errorData)
+
+    assert.strictEqual(
+      err.message,
+      'nombre: Este campo no puede estar en blanco. | codigo: Este campo es obligatorio.'
+    )
+  })
+
+  it('ApiError proporciona fallbacks limpios en español según el código HTTP cuando no hay data', () => {
+    const err404 = new ApiError(404, null, 'Error HTTP 404')
+    assert.strictEqual(err404.message, 'El recurso solicitado no fue encontrado.')
+
+    const err500 = new ApiError(500, null, 'Error HTTP 500')
+    assert.strictEqual(err500.message, 'Ocurrió un error interno en el servidor. Por favor, intentá nuevamente más tarde.')
+  })
+
+  it('createApiClient captura excepciones de red (fetch) y lanza ApiError en español', async () => {
+    const mockFailingFetch = async () => {
+      throw new TypeError('Failed to fetch')
+    }
+
+    const client = createApiClient({
+      baseUrl: 'http://localhost:8000/api',
+      customFetch: mockFailingFetch,
+    })
+
+    await assert.rejects(
+      async () => {
+        await client.get('/materias/')
+      },
+      (err) => {
+        assert(err instanceof ApiError)
+        assert.strictEqual(err.status, 0)
+        assert.match(err.message, /No se pudo conectar con el servidor/i)
+        return true
+      }
+    )
+  })
 })

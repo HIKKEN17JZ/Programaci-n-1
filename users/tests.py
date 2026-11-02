@@ -41,20 +41,28 @@ class UserAuthenticationTests(APITestCase):
         self.assertIn('refresh', response.data)
 
     def test_obtain_jwt_token_invalid_password(self):
-        """Credenciales incorrectas devuelven 401 Unauthorized."""
+        """Credenciales incorrectas devuelven 401 Unauthorized y mensaje en español."""
         response = self.client.post('/api/token/', {
             'username': 'docente_user',
             'password': 'WrongPassword'
         })
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(
+            response.data.get('detail'),
+            'Usuario o contraseña incorrectos. Por favor, verificá tus datos e intentalo nuevamente.'
+        )
 
     def test_obtain_jwt_token_nonexistent_user(self):
-        """Usuario inexistente devuelve 401 Unauthorized."""
+        """Usuario inexistente devuelve 401 Unauthorized y mensaje en español."""
         response = self.client.post('/api/token/', {
             'username': 'nadie',
             'password': 'Password123!'
         })
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(
+            response.data.get('detail'),
+            'Usuario o contraseña incorrectos. Por favor, verificá tus datos e intentalo nuevamente.'
+        )
 
     def test_refresh_jwt_token_success(self):
         """Token refresh válido devuelve nuevo token access."""

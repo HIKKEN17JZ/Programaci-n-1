@@ -3,7 +3,7 @@
  */
 
 export const ESTADOS_VALIDOS_MATERIA = ['PEN', 'CUR', 'REG', 'APR', 'REC']
-export const TIPOS_VALIDOS_EXAMEN = ['PAR', 'FIN', 'PRO']
+export const TIPOS_VALIDOS_EXAMEN = ['FIN', 'PRO']
 
 /**
  * Valida los campos ingresados para la creación o edición de una Materia.
@@ -70,21 +70,54 @@ export function validarFormularioExamen(datos = {}) {
     }
   }
 
-  // Validación de tipo de examen
+  // Validación de tipo de examen (solo FIN y PRO permitidos en mesas de examen)
   if (!datos.tipo || !TIPOS_VALIDOS_EXAMEN.includes(datos.tipo)) {
-    errores.tipo = 'El tipo de examen debe ser Parcial (PAR), Final (FIN) o Promoción (PRO).'
+    errores.tipo = 'El tipo de examen debe ser Final (FIN) o Promoción (PRO).'
   }
 
-  // Validación de nota (opcional, entre 0 y 10 si se provee)
-  if (datos.nota !== null && datos.nota !== undefined && String(datos.nota).trim() !== '') {
+  // Validación de nota (opcional para final, obligatoria >= 6 para promoción)
+  const tieneNota = datos.nota !== null && datos.nota !== undefined && String(datos.nota).trim() !== ''
+  if (tieneNota) {
     const notaNum = Number(datos.nota)
     if (isNaN(notaNum) || notaNum < 0 || notaNum > 10) {
       errores.nota = 'La calificación debe ser una nota numérica entre 0 y 10.'
+    } else if (datos.tipo === 'PRO' && notaNum < 6) {
+      errores.nota = 'Una instancia de promoción requiere una calificación aprobatoria (mínimo 6). Si no alcanzaste la promoción, selecciona Examen Final.'
     }
+  } else if (datos.tipo === 'PRO') {
+    errores.nota = 'Debes ingresar una nota igual o superior a 6 para registrar una promoción.'
   }
 
   return {
     esValido: Object.keys(errores).length === 0,
     errores,
   }
+}
+
+/**
+ * Filtra la lista de materias disponibles para ser seleccionadas en el registro de un examen.
+ * Excluye aquellas materias que ya se encuentran aprobadas (APR), a menos que se esté
+ * editando un examen que ya pertenecía a dicha materia.
+ *
+ * @param {Array} materias - Lista de materias del estudiante.
+ * @param {object|null} [examenAEditar] - Examen en proceso de edición (opcional).
+ * @returns {Array} Materias aptas para rendir examen.
+ */
+export function filtrarMateriasParaExamen(materias = [], examenAEditar = null) {
+  if (!Array.isArray(materias)) return []
+  const esEdicion = Boolean(examenAEditar)
+  const materiaIdEdicion = examenAEditar && examenAEditar.materia !== undefined && examenAEditar.materia !== null
+    ? String(examenAEditar.materia)
+    : null
+
+  return materias.filter((mat) => {
+    if (!mat || mat.id === undefined || mat.id === null) return false
+    // Si se está editando un examen existente, mantener su materia visible en el selector
+    if (esEdicion && materiaIdEdicion !== null && String(mat.id) === materiaIdEdicion) {
+      return true
+    }
+    // Para nuevos exámenes, excluir materias que ya estén aprobadas
+    const esAprobada = mat.estado === 'APR' || mat.estado === 'Aprobada'
+    return !esAprobada
+  })
 }

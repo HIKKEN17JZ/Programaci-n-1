@@ -1,10 +1,15 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth.js'
 import { academicService } from '../services/academicService.js'
 import { authService } from '../services/authService.js'
+import { activityLogService } from '../services/activityLogService.js'
 import { getRoleBadge, getRoleLabel } from '../utils/roles.js'
-import { obtenerSemaforo } from '../utils/progress.js'
+import {
+  obtenerSemaforo,
+  formatearNivelCarrera,
+  TIPO_EXAMEN_LABEL,
+} from '../utils/progress.js'
 
 function Profile() {
   const { user, updateUser, refreshUser, logout } = useAuth()
@@ -16,13 +21,68 @@ function Profile() {
   const [carreraInput, setCarreraInput] = useState(user?.plan_estudio_nombre || '')
   const [guardandoCarrera, setGuardandoCarrera] = useState(false)
 
+  // Estado para el historial de cambios desplegable
+  const [historialAbierto, setHistorialAbierto] = useState(false)
+  const [logKey, setLogKey] = useState(0)
+  const [filtroAccion, setFiltroAccion] = useState('TODOS')
+
+  const eventosLog = useMemo(() => {
+    if (!user?.id) return []
+    // Referencia intencional para sincronizar el historial al desplegar o limpiar
+    void logKey
+    void historialAbierto
+    return activityLogService.getLog(user.id)
+  }, [user?.id, logKey, historialAbierto])
+
   useEffect(() => {
     let isMounted = true
 
     academicService
       .getDashboardData()
       .then((data) => {
-        if (isMounted) setDashboard(data)
+        if (!isMounted) return
+        setDashboard(data)
+
+        // Sincronizar retroactivamente materias y exámenes existentes en el registro de auditoría si aún no estaban
+        if (user?.id && data) {
+          const logActual = activityLogService.getLog(user.id)
+          const idsRegistrados = new Set(logActual.map((e) => e.idReferencia).filter(Boolean))
+          let huboNuevos = false
+
+          ;(data.materias || []).forEach((m) => {
+            if (!idsRegistrados.has(String(m.id))) {
+              activityLogService.registrarAccion({
+                accion: 'CREAR',
+                entidad: 'MATERIA',
+                detalle: `Asignatura en plan de estudio: "${m.nombre}" (${formatearNivelCarrera(m.año_dictado)})`,
+                idReferencia: m.id,
+                userId: user.id,
+              })
+              idsRegistrados.add(String(m.id))
+              huboNuevos = true
+            }
+          })
+
+          ;(data.examenes || []).forEach((ex) => {
+            if (!idsRegistrados.has(String(ex.id))) {
+              const matAsoc = (data.materias || []).find((m) => String(m.id) === String(ex.materia))
+              const nombreMat = matAsoc ? matAsoc.nombre : `Materia #${ex.materia}`
+              activityLogService.registrarAccion({
+                accion: 'CREAR',
+                entidad: 'EXAMEN',
+                detalle: `Mesa de examen registrada: ${TIPO_EXAMEN_LABEL[ex.tipo] || ex.tipo} en "${nombreMat}" ${ex.nota !== null ? `(Nota: ${ex.nota})` : '(Pendiente)'}`,
+                idReferencia: ex.id,
+                userId: user.id,
+              })
+              idsRegistrados.add(String(ex.id))
+              huboNuevos = true
+            }
+          })
+
+          if (huboNuevos) {
+            setLogKey((prev) => prev + 1)
+          }
+        }
       })
       .catch(() => {
         // Fallback defensivo si el servicio no responde
@@ -34,7 +94,7 @@ function Profile() {
     return () => {
       isMounted = false
     }
-  }, [])
+  }, [user?.id])
 
   const handleLogout = async () => {
     await logout()
@@ -46,9 +106,16 @@ function Profile() {
     setGuardandoCarrera(true)
     try {
       await authService.updateProfile({ plan_estudio_nombre: nueva })
+      activityLogService.registrarAccion({
+        accion: 'EDITAR',
+        entidad: 'PLAN',
+        detalle: `Plan de estudio / carrera actualizado a "${nueva}"`,
+        userId: user?.id,
+      })
       updateUser?.({ plan_estudio_nombre: nueva })
       await refreshUser?.()
       setEditandoCarrera(false)
+      setLogKey((prev) => prev + 1)
     } catch {
       // Manejo silencioso o feedback en UI
     } finally {
@@ -56,8 +123,38 @@ function Profile() {
     }
   }
 
+  const handleLimpiarHistorial = () => {
+    if (window.confirm('¿Seguro que deseas vaciar el historial de cambios registrados?')) {
+      activityLogService.clearLog(user?.id)
+      setLogKey((prev) => prev + 1)
+    }
+  }
+
   const semaforo = obtenerSemaforo(dashboard?.avance?.porcentaje || 0)
   const iniciales = user?.username ? user.username.slice(0, 2).toUpperCase() : 'US'
+
+  const eventosFiltrados = useMemo(() => {
+    if (filtroAccion === 'TODOS') return eventosLog
+    if (filtroAccion === 'ELIMINAR') return eventosLog.filter((e) => e.accion === 'ELIMINAR')
+    if (filtroAccion === 'CREAR') return eventosLog.filter((e) => e.accion === 'CREAR')
+    if (filtroAccion === 'EDITAR') {
+      return eventosLog.filter((e) => e.accion === 'EDITAR' || e.accion === 'ESTADO')
+    }
+    return eventosLog
+  }, [eventosLog, filtroAccion])
+
+  const conteoEliminados = useMemo(
+    () => eventosLog.filter((e) => e.accion === 'ELIMINAR').length,
+    [eventosLog]
+  )
+  const conteoCreados = useMemo(
+    () => eventosLog.filter((e) => e.accion === 'CREAR').length,
+    [eventosLog]
+  )
+  const conteoModificados = useMemo(
+    () => eventosLog.filter((e) => e.accion === 'EDITAR' || e.accion === 'ESTADO').length,
+    [eventosLog]
+  )
 
   return (
     <main className="flex-grow-1 pb-5">
@@ -157,10 +254,6 @@ function Profile() {
                     </div>
                   )}
                 </div>
-                <div className="mb-2">
-                  <span className="text-secondary d-block">ID de Usuario:</span>
-                  <span className="fw-semibold text-dark">#{user?.id || '—'}</span>
-                </div>
               </div>
 
               <div className="mt-auto pt-3">
@@ -244,6 +337,146 @@ function Profile() {
                   🏠 Ir al Inicio
                 </Link>
               </div>
+            </div>
+
+            {/* Componente Desplegable de Historial de Cambios y Registro de Actividad */}
+            <div className="card border-0 shadow-sm mt-4 overflow-hidden">
+              <button
+                type="button"
+                className="btn btn-light w-100 text-start p-3 d-flex justify-content-between align-items-center bg-white border-0"
+                onClick={() => setHistorialAbierto((prev) => !prev)}
+                aria-expanded={historialAbierto}
+                aria-controls="panelHistorialAuditoria"
+              >
+                <div className="d-flex align-items-center gap-3">
+                  <span className="fs-4">📜</span>
+                  <div>
+                    <div className="fw-bold text-dark">Historial de Cambios y Registro de Actividad</div>
+                    <div className="text-secondary small">
+                      Registro de acciones realizadas (mesas eliminadas, materias creadas y cambios de condición).
+                    </div>
+                  </div>
+                </div>
+                <div className="d-flex align-items-center gap-2">
+                  <span className="badge text-bg-primary rounded-pill">
+                    {eventosLog.length} {eventosLog.length === 1 ? 'registro' : 'registros'}
+                  </span>
+                  <span className="text-secondary small fw-semibold">
+                    {historialAbierto ? '▲ Plegar' : '▼ Desplegar'}
+                  </span>
+                </div>
+              </button>
+
+              {historialAbierto && (
+                <div id="panelHistorialAuditoria" className="border-top p-4 bg-light bg-opacity-25">
+                  <div className="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2 mb-3">
+                    <div className="btn-group btn-group-sm" role="group" aria-label="Filtro de acciones">
+                      <button
+                        type="button"
+                        className={`btn ${filtroAccion === 'TODOS' ? 'btn-primary' : 'btn-outline-secondary'}`}
+                        onClick={() => setFiltroAccion('TODOS')}
+                      >
+                        Todos ({eventosLog.length})
+                      </button>
+                      <button
+                        type="button"
+                        className={`btn ${filtroAccion === 'ELIMINAR' ? 'btn-danger' : 'btn-outline-secondary'}`}
+                        onClick={() => setFiltroAccion('ELIMINAR')}
+                      >
+                        🗑️ Eliminados ({conteoEliminados})
+                      </button>
+                      <button
+                        type="button"
+                        className={`btn ${filtroAccion === 'CREAR' ? 'btn-success' : 'btn-outline-secondary'}`}
+                        onClick={() => setFiltroAccion('CREAR')}
+                      >
+                        ➕ Creados ({conteoCreados})
+                      </button>
+                      <button
+                        type="button"
+                        className={`btn ${filtroAccion === 'EDITAR' ? 'btn-info' : 'btn-outline-secondary'}`}
+                        onClick={() => setFiltroAccion('EDITAR')}
+                      >
+                        ✏️ Modificaciones ({conteoModificados})
+                      </button>
+                    </div>
+
+                    {eventosLog.length > 0 && (
+                      <button
+                        type="button"
+                        className="btn btn-outline-danger btn-sm"
+                        onClick={handleLimpiarHistorial}
+                      >
+                        Limpiar registro
+                      </button>
+                    )}
+                  </div>
+
+                  {eventosFiltrados.length === 0 ? (
+                    <div className="text-center py-4 bg-white rounded-3 border">
+                      <span className="display-6 text-muted d-block mb-2">📋</span>
+                      <p className="text-secondary small mb-1">
+                        {eventosLog.length === 0
+                          ? 'Aún no se registran movimientos en el historial.'
+                          : 'No hay eventos en esta categoría.'}
+                      </p>
+                      <span className="text-muted extra-small" style={{ fontSize: '12px' }}>
+                        Las próximas mesas de examen eliminadas, altas de materias o calificaciones se guardarán aquí cronológicamente.
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="table-responsive bg-white rounded-3 border">
+                      <table className="table table-hover align-middle mb-0">
+                        <thead className="table-light">
+                          <tr>
+                            <th scope="col" style={{ width: '220px' }}>Fecha y Hora</th>
+                            <th scope="col" style={{ width: '150px' }}>Acción</th>
+                            <th scope="col">Detalle del Evento</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {eventosFiltrados.map((ev) => {
+                            let badgeClase = 'text-bg-secondary'
+                            let labelAccion = ev.accion
+                            if (ev.accion === 'ELIMINAR') {
+                              badgeClase = 'text-bg-danger'
+                              labelAccion = '🗑️ Eliminado'
+                            } else if (ev.accion === 'CREAR') {
+                              badgeClase = 'text-bg-success'
+                              labelAccion = '➕ Registrado'
+                            } else if (ev.accion === 'EDITAR') {
+                              badgeClase = 'text-bg-info text-dark'
+                              labelAccion = '✏️ Modificado'
+                            } else if (ev.accion === 'ESTADO') {
+                              badgeClase = 'text-bg-warning text-dark'
+                              labelAccion = '⚡ Condición'
+                            } else if (ev.accion === 'IMPORTAR') {
+                              badgeClase = 'text-bg-primary'
+                              labelAccion = '📥 Plan CSV'
+                            }
+
+                            return (
+                              <tr key={ev.id}>
+                                <td className="text-secondary small">
+                                  {ev.fechaFormateada}
+                                </td>
+                                <td>
+                                  <span className={`badge ${badgeClase} small`}>
+                                    {labelAccion}
+                                  </span>
+                                </td>
+                                <td>
+                                  <span className="fw-semibold text-dark">{ev.detalle}</span>
+                                </td>
+                              </tr>
+                            )
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>

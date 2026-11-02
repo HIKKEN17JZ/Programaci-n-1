@@ -6,6 +6,7 @@ import {
 } from '../utils/csvHelper'
 import { academicService } from '../services/academicService'
 import { authService } from '../services/authService'
+import { activityLogService } from '../services/activityLogService'
 import { useAuth } from '../hooks/useAuth'
 import { formatearNivelCarrera } from '../utils/progress'
 
@@ -102,8 +103,15 @@ function ImportarPlanModalContent({ onClose, onSuccess }) {
     for (let i = 0; i < materiasValidas.length; i++) {
       const materia = materiasValidas[i]
       try {
-        await academicService.createMateria(materia)
+        const res = await academicService.createMateria(materia)
         creadas++
+        activityLogService.registrarAccion({
+          accion: 'CREAR',
+          entidad: 'MATERIA',
+          detalle: `Asignatura importada por CSV: "${res?.nombre || materia.nombre}" (${formatearNivelCarrera(res?.año_dictado || materia.año_dictado)})`,
+          idReferencia: res?.id,
+          userId: user?.id,
+        })
       } catch (err) {
         fallos.push(`"${materia.nombre}": ${err?.message || 'Error en el servidor'}`)
       }
@@ -117,6 +125,12 @@ function ImportarPlanModalContent({ onClose, onSuccess }) {
     }
 
     if (creadas > 0) {
+      activityLogService.registrarAccion({
+        accion: 'IMPORTAR',
+        entidad: 'PLAN',
+        detalle: `Carga masiva completada: ${creadas} asignaturas registradas desde archivo CSV "${archivoNombre || 'plan_estudio.csv'}" para "${nuevaCarrera || user?.plan_estudio_nombre || 'Plan de estudio'}"`,
+        userId: user?.id,
+      })
       onSuccess?.(creadas)
       if (fallos.length === 0) {
         onClose()

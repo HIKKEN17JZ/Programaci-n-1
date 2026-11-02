@@ -17,6 +17,7 @@ import MateriaModal from '../components/MateriaModal.jsx'
 import ConfirmModal from '../components/ConfirmModal.jsx'
 import { ImportarPlanModal } from '../components/ImportarPlanModal.jsx'
 import { QuickStatusSelect } from '../components/QuickStatusSelect.jsx'
+import { activityLogService } from '../services/activityLogService.js'
 import {
   generarPlantillaCSV,
   exportarMateriasACSV,
@@ -129,7 +130,31 @@ function MateriasList() {
     if (!materiaAEliminar) return
     setDeleting(true)
     try {
+      // Exámenes vinculados a esta materia que se darán de baja por cascada
+      const examenesAsociados = (examenes || []).filter(
+        (ex) => String(ex.materia) === String(materiaAEliminar.id)
+      )
+
       await academicService.deleteMateria(materiaAEliminar.id)
+
+      activityLogService.registrarAccion({
+        accion: 'ELIMINAR',
+        entidad: 'MATERIA',
+        detalle: `Asignatura eliminada: "${materiaAEliminar.nombre}" (${formatearNivelCarrera(materiaAEliminar.año_dictado)})`,
+        idReferencia: materiaAEliminar.id,
+        userId: user?.id,
+      })
+
+      examenesAsociados.forEach((ex) => {
+        activityLogService.registrarAccion({
+          accion: 'ELIMINAR',
+          entidad: 'EXAMEN',
+          detalle: `Mesa de examen eliminada por baja de "${materiaAEliminar.nombre}": llamado ${ex.tipo}`,
+          idReferencia: ex.id,
+          userId: user?.id,
+        })
+      })
+
       setFeedback({
         tipo: 'success',
         mensaje: `La materia "${materiaAEliminar.nombre}" fue eliminada correctamente del plan de estudio.`,
@@ -149,6 +174,13 @@ function MateriasList() {
 
   const handleModalSuccess = (resultado, accion) => {
     const accionTxt = accion === 'CREATE' ? 'registrada' : 'actualizada'
+    activityLogService.registrarAccion({
+      accion: accion === 'CREATE' ? 'CREAR' : 'EDITAR',
+      entidad: 'MATERIA',
+      detalle: `Asignatura ${accion === 'CREATE' ? 'creada' : 'modificada'}: "${resultado.nombre}" (${formatearNivelCarrera(resultado.año_dictado)})`,
+      idReferencia: resultado.id,
+      userId: user?.id,
+    })
     setFeedback({
       tipo: 'success',
       mensaje: `Asignatura "${resultado.nombre}" ${accionTxt} con éxito.`,
@@ -171,6 +203,13 @@ function MateriasList() {
   }
 
   const handleEstadoActualizado = (materiaActualizada) => {
+    activityLogService.registrarAccion({
+      accion: 'ESTADO',
+      entidad: 'MATERIA',
+      detalle: `Condición actualizada en "${materiaActualizada.nombre}": pasó a ${obtenerEtiquetaEstado(materiaActualizada.estado)}`,
+      idReferencia: materiaActualizada.id,
+      userId: user?.id,
+    })
     setMaterias((prev) =>
       prev.map((m) => (m.id === materiaActualizada.id ? materiaActualizada : m))
     )
@@ -447,7 +486,6 @@ function MateriasList() {
                         <tr key={materia.id}>
                           <td>
                             <div className="fw-semibold text-dark">{materia.nombre}</div>
-                            <span className="text-muted small">ID: #{materia.id}</span>
                           </td>
                           <td className="text-center">
                             <span className="badge text-bg-light border text-dark">

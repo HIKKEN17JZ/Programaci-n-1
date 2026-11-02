@@ -10,6 +10,7 @@ import {
 } from '../utils/progress.js'
 import ExamenModal from '../components/ExamenModal.jsx'
 import ConfirmModal from '../components/ConfirmModal.jsx'
+import { activityLogService } from '../services/activityLogService.js'
 
 function ExamenesList() {
   const { user } = useAuth()
@@ -126,6 +127,13 @@ function ExamenesList() {
     setDeleting(true)
     try {
       await academicService.deleteExamen(examenAEliminar.id)
+      activityLogService.registrarAccion({
+        accion: 'ELIMINAR',
+        entidad: 'EXAMEN',
+        detalle: `Mesa de examen eliminada: ${TIPO_EXAMEN_LABEL[examenAEliminar.tipo] || examenAEliminar.tipo} en "${examenAEliminar.nombreMateria || 'Materia'}"`,
+        idReferencia: examenAEliminar.id,
+        userId: user?.id,
+      })
       setFeedback({
         tipo: 'success',
         mensaje: 'La mesa de examen fue eliminada correctamente del historial.',
@@ -147,6 +155,13 @@ function ExamenesList() {
     const accionTxt = accion === 'CREATE' ? 'registrado' : 'actualizado'
     const esAprobado = resultado?.nota !== null && resultado?.nota !== undefined && Number(resultado.nota) >= 6
     const formatted = formatearMesaExamen(resultado, materias)
+    activityLogService.registrarAccion({
+      accion: accion === 'CREATE' ? 'CREAR' : 'EDITAR',
+      entidad: 'EXAMEN',
+      detalle: `Mesa de examen ${accionTxt}: ${formatted.llamado} en "${formatted.materia}" ${resultado?.nota !== null ? `(Nota: ${resultado.nota})` : '(Sin nota)'}`,
+      idReferencia: resultado.id,
+      userId: user?.id,
+    })
     setFeedback({
       tipo: 'success',
       mensaje: esAprobado
@@ -284,7 +299,6 @@ function ExamenesList() {
                     onChange={(e) => setFiltroTipo(e.target.value)}
                   >
                     <option value="TODOS">Todos los tipos</option>
-                    <option value="PAR">Parcial (PAR)</option>
                     <option value="FIN">Final (FIN)</option>
                     <option value="PRO">Promoción (PRO)</option>
                   </select>
@@ -398,7 +412,6 @@ function ExamenesList() {
                           <tr key={ex.id}>
                             <td>
                               <div className="fw-semibold text-dark">{ex.nombreMateria}</div>
-                              <span className="text-muted small">Examen ID #{ex.id}</span>
                             </td>
                             <td>
                               <span className="badge text-bg-light border text-dark">
