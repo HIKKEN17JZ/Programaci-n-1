@@ -193,9 +193,13 @@ export function createApiClient({
   }
 }
 
-const defaultApiUrl =
+let defaultApiUrl =
   (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) ||
   'http://localhost:8000/api'
+
+if (defaultApiUrl && !defaultApiUrl.replace(/\/+$/, '').endsWith('/api')) {
+  defaultApiUrl = `${defaultApiUrl.replace(/\/+$/, '')}/api`
+}
 
 export const api = createApiClient({
   baseUrl: defaultApiUrl,
