@@ -527,6 +527,48 @@ class ExamenTests(BaseAPITestCase):
         })
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
+    def test_delete_examen_recalcula_estado_materia_si_era_el_unico_aprobado(self):
+        """Eliminar el examen aprobado devuelve la materia a REG (consistencia bidireccional)."""
+        self.client.force_authenticate(user=self.docente1)
+        # Crear examen aprobado
+        resp = self.client.post('/api/examenes/', {
+            'materia': self.materia_docente1.id,
+            'fecha': '2026-07-20',
+            'nota': 8.0,
+            'tipo': 'FIN'
+        })
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        self.materia_docente1.refresh_from_db()
+        self.assertEqual(self.materia_docente1.estado, 'APR')
+
+        # Eliminar el examen
+        del_resp = self.client.delete(f'/api/examenes/{resp.data["id"]}/')
+        self.assertEqual(del_resp.status_code, status.HTTP_204_NO_CONTENT)
+        self.materia_docente1.refresh_from_db()
+        self.assertEqual(self.materia_docente1.estado, 'REG')
+
+    def test_update_examen_nota_aplazada_restituye_estado_a_reg(self):
+        """Editar nota de examen aprobado a aplazo (<6) restituye la materia a REG."""
+        self.client.force_authenticate(user=self.docente1)
+        # Crear examen aprobado
+        resp = self.client.post('/api/examenes/', {
+            'materia': self.materia_docente1.id,
+            'fecha': '2026-07-20',
+            'nota': 9.0,
+            'tipo': 'FIN'
+        })
+        examen_id = resp.data["id"]
+        self.materia_docente1.refresh_from_db()
+        self.assertEqual(self.materia_docente1.estado, 'APR')
+
+        # Modificar nota a 4 (aplazo)
+        patch_resp = self.client.patch(f'/api/examenes/{examen_id}/', {
+            'nota': 4.0
+        })
+        self.assertEqual(patch_resp.status_code, status.HTTP_200_OK)
+        self.materia_docente1.refresh_from_db()
+        self.assertEqual(self.materia_docente1.estado, 'REG')
+
 
 class InfrastructureSmokeTestCase(TestCase):
     """Pruebas de infraestructura y configuración base correspondientes al alcance de TP1."""

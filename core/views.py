@@ -34,6 +34,28 @@ class MateriaViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(usuario=self.request.user)
 
+def sincronizar_estado_aprobacion_materia(materia):
+    """
+    Garantiza la consistencia bidireccional del estado de la materia (Single Source of Truth):
+    - Si cuenta con al menos una mesa de examen (FIN o PRO) con nota >= 6, asegura estado 'APR'.
+    - Si estaba en 'APR' pero ya no cuenta con ninguna mesa aprobada (se eliminó o se editó la nota),
+      restituye el estado a 'REG' (regular) para evitar estados aprobados huérfanos.
+    """
+    if not materia:
+        return
+    tiene_aprobado = materia.examenes.filter(
+        tipo__in=['FIN', 'PRO'],
+        nota__isnull=False,
+        nota__gte=6
+    ).exists()
+
+    if tiene_aprobado and materia.estado != 'APR':
+        materia.estado = 'APR'
+        materia.save(update_fields=['estado'])
+    elif not tiene_aprobado and materia.estado == 'APR':
+        materia.estado = 'REG'
+        materia.save(update_fields=['estado'])
+
 class ExamenViewSet(viewsets.ModelViewSet):
     """
     CRUD de Exámenes.
@@ -58,23 +80,22 @@ class ExamenViewSet(viewsets.ModelViewSet):
         if materia.usuario != user and not is_admin:
             raise PermissionDenied("No puedes crear un examen para una materia que no te pertenece.")
         examen = serializer.save()
-        # Auto-aprobar materia únicamente si la nota es >= 6 y es examen de mesa (Final o Promoción)
-        if examen.tipo in ['FIN', 'PRO'] and examen.nota is not None and float(examen.nota) >= 6:
-            if materia.estado != 'APR':
-                materia.estado = 'APR'
-                materia.save(update_fields=['estado'])
+        sincronizar_estado_aprobacion_materia(materia)
 
     def perform_update(self, serializer):
         user = self.request.user
         is_admin = getattr(user, 'role', None) == User.Role.ADMIN or user.is_superuser
-        materia_nueva = serializer.validated_data.get('materia', serializer.instance.materia)
+        materia_anterior = serializer.instance.materia
+        materia_nueva = serializer.validated_data.get('materia', materia_anterior)
         if materia_nueva.usuario != user and not is_admin:
             raise PermissionDenied("No puedes asociar este examen a una materia que no te pertenece.")
         examen = serializer.save()
-        # Auto-aprobar materia únicamente si la nota es >= 6 y es examen de mesa (Final o Promoción)
-        if examen.tipo in ['FIN', 'PRO'] and examen.nota is not None and float(examen.nota) >= 6:
-            materia = examen.materia
-            if materia.estado != 'APR':
-                materia.estado = 'APR'
-                materia.save(update_fields=['estado'])
+        sincronizar_estado_aprobacion_materia(examen.materia)
+        if materia_anterior.id != examen.materia.id:
+            sincronizar_estado_aprobacion_materia(materia_anterior)
+
+    def perform_destroy(self, instance):
+        materia = instance.materia
+        instance.delete()
+        sincronizar_estado_aprobacion_materia(materia)
 
