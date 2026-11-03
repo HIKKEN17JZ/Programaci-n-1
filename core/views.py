@@ -1,9 +1,39 @@
-from rest_framework import viewsets, permissions
+from django.db import connection
+from rest_framework import viewsets, permissions, status
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied
+from drf_spectacular.utils import extend_schema, OpenApiTypes
 from users.models import User
 from users.permissions import IsAdminOrDocente, IsAdminOnly, IsOwnerOrReadOnly
 from .models import Facultad, Materia, Examen
 from .serializers import FacultadSerializer, MateriaSerializer, ExamenSerializer
+
+@extend_schema(
+    summary="Health Check del servicio",
+    description="Endpoint de monitoreo y health check para servicios en la nube (TP10). Verifica conectividad con la base de datos.",
+    responses={200: OpenApiTypes.OBJECT, 503: OpenApiTypes.OBJECT}
+)
+@api_view(['GET'])
+@permission_classes([permissions.AllowAny])
+def health_check(request):
+    """
+    Endpoint de monitoreo y health check para servicios en la nube (TP10).
+    Verifica la conectividad activa con PostgreSQL y devuelve status 200 OK.
+    """
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT 1;")
+        return Response({
+            "status": "ok",
+            "service": "api"
+        }, status=status.HTTP_200_OK)
+    except Exception as exc:
+        return Response({
+            "status": "error",
+            "service": "api",
+            "detail": str(exc)
+        }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
 class FacultadViewSet(viewsets.ModelViewSet):
     """
@@ -36,25 +66,10 @@ class MateriaViewSet(viewsets.ModelViewSet):
 
 def sincronizar_estado_aprobacion_materia(materia):
     """
-    Garantiza la consistencia bidireccional del estado de la materia (Single Source of Truth):
-    - Si cuenta con al menos una mesa de examen (FIN o PRO) con nota >= 6, asegura estado 'APR'.
-    - Si estaba en 'APR' pero ya no cuenta con ninguna mesa aprobada (se eliminó o se editó la nota),
-      restituye el estado a 'REG' (regular) para evitar estados aprobados huérfanos.
+    Función de compatibilidad delegada al método de dominio de Materia (SOLID - SRP).
     """
-    if not materia:
-        return
-    tiene_aprobado = materia.examenes.filter(
-        tipo__in=['FIN', 'PRO'],
-        nota__isnull=False,
-        nota__gte=6
-    ).exists()
-
-    if tiene_aprobado and materia.estado != 'APR':
-        materia.estado = 'APR'
-        materia.save(update_fields=['estado'])
-    elif not tiene_aprobado and materia.estado == 'APR':
-        materia.estado = 'REG'
-        materia.save(update_fields=['estado'])
+    if materia:
+        materia.sincronizar_estado_aprobacion()
 
 class ExamenViewSet(viewsets.ModelViewSet):
     """

@@ -5,6 +5,7 @@ import { academicService } from '../services/academicService.js'
 import { authService } from '../services/authService.js'
 import { activityLogService } from '../services/activityLogService.js'
 import { getRoleBadge, getRoleLabel } from '../utils/roles.js'
+import ConfirmModal from '../components/ConfirmModal.jsx'
 import {
   obtenerSemaforo,
 } from '../utils/progress.js'
@@ -23,6 +24,7 @@ function Profile() {
   const [historialAbierto, setHistorialAbierto] = useState(false)
   const [logKey, setLogKey] = useState(0)
   const [filtroAccion, setFiltroAccion] = useState('TODOS')
+  const [confirmClearOpen, setConfirmClearOpen] = useState(false)
 
   const eventosLog = useMemo(() => {
     if (!user?.id) return []
@@ -81,10 +83,13 @@ function Profile() {
   }
 
   const handleLimpiarHistorial = () => {
-    if (window.confirm('¿Seguro que deseas vaciar el historial de cambios registrados?')) {
-      activityLogService.clearLog(user?.id)
-      setLogKey((prev) => prev + 1)
-    }
+    setConfirmClearOpen(true)
+  }
+
+  const handleConfirmarLimpiar = () => {
+    activityLogService.clearLog(user?.id)
+    setLogKey((prev) => prev + 1)
+    setConfirmClearOpen(false)
   }
 
   const semaforo = obtenerSemaforo(dashboard?.avance?.porcentaje || 0)
@@ -438,6 +443,16 @@ function Profile() {
           </div>
         </div>
       </div>
+      {/* Modal accesible para Confirmar Vaciado de Historial */}
+      <ConfirmModal
+        isOpen={confirmClearOpen}
+        titulo="Vaciar historial de actividad"
+        mensaje="¿Estás seguro de que deseas vaciar el historial de cambios registrados? Esta acción no se puede deshacer."
+        confirmTexto="Vaciar historial"
+        confirmClase="btn-danger"
+        onClose={() => setConfirmClearOpen(false)}
+        onConfirm={handleConfirmarLimpiar}
+      />
     </main>
   )
 }

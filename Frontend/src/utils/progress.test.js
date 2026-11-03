@@ -160,10 +160,10 @@ describe('Utilidades de Progreso Académico', () => {
     })
 
     it('resuelve adecuadamente si materia ya es texto o si no se encuentra en el mapa', () => {
-      const examen = { id: 11, materia: 'Álgebra', fecha: '2026-11-20', nota: null, tipo: 'PAR' }
+      const examen = { id: 11, materia: 'Álgebra', fecha: '2026-11-20', nota: null, tipo: 'PRO' }
       const resultado = formatearMesaExamen(examen, [])
       assert.strictEqual(resultado.materia, 'Álgebra')
-      assert.strictEqual(resultado.llamado, 'Examen Parcial')
+      assert.strictEqual(resultado.llamado, 'Promoción')
       assert.strictEqual(resultado.nota, null)
     })
 
@@ -176,7 +176,7 @@ describe('Utilidades de Progreso Académico', () => {
       const res1 = formatearMesaExamen({ id: 20, materia: '1', fecha: '2026-12-20', tipo: 'FIN' }, materias)
       assert.strictEqual(res1.materia, 'Programación I')
 
-      const res2 = formatearMesaExamen({ id: 21, materia: 2, fecha: '2026-12-21', tipo: 'PAR' }, materias)
+      const res2 = formatearMesaExamen({ id: 21, materia: 2, fecha: '2026-12-21', tipo: 'PRO' }, materias)
       assert.strictEqual(res2.materia, 'Base de Datos')
 
       const res3 = formatearMesaExamen({ id: 22, materia: '99', fecha: '2026-12-22' }, materias)

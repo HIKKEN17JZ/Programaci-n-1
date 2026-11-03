@@ -118,7 +118,6 @@ export function obtenerSemaforo(porcentaje) {
 }
 
 export const TIPO_EXAMEN_LABEL = {
-  PAR: 'Examen Parcial',
   FIN: 'Examen Final',
   PRO: 'Promoción',
 }

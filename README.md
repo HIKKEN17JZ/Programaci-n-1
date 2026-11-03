@@ -4,6 +4,15 @@ Sistema integral para la administración, seguimiento y planificación de la tra
 
 ---
 
+## 🌐 Despliegue en Producción (Cloud Deployment - TP10)
+
+- **Frontend Web en Vivo**: [https://academicogestor.vercel.app](https://academicogestor.vercel.app)
+- **API REST Pública en Vivo**: [https://gestor-apo.onrender.com/api](https://gestor-apo.onrender.com/api)
+- **Documentación Swagger / OpenAPI**: [https://gestor-apo.onrender.com/api/docs/](https://gestor-apo.onrender.com/api/docs/)
+- **Monitoreo / Health Check**: [https://gestor-apo.onrender.com/api/health/](https://gestor-apo.onrender.com/api/health/)
+
+---
+
 ## 🎯 Objetivos del Proyecto
 
 - **Objetivo General**: Desarrollar una solución web modular (Backend RESTful + Frontend SPA) para gestionar el progreso académico, calificaciones y mesas de examen con control de acceso por roles e integridad de datos.
@@ -30,7 +39,8 @@ El repositorio reúne de forma progresiva las metas establecidas a lo largo de l
 | **TP 6** | Maquetado Responsive (Bootstrap) | Interfaz completa de Home modularizada: Hero section, tarjetas de métricas (`StatCard`), monitor de avance (`ProgressCard`), plan de estudio (`PlanEstudioCard`), mesas de examen (`MesasExamenCard`), Navbar colapsable con logo e isotipo SVG y Footer accesible libre de desbordes. |
 | **TP 7** | Sistema Auth en Frontend | Contexto global de autenticación (`AuthContext` + `useAuth`), rutas protegidas (`ProtectedRoute`), vistas completas de `Login` y `Register` con validaciones y alertas, y flujo de cierre de sesión (`Logout`). |
 | **TP 8** | **Conexión Frontend con Backend** | Conexión integral de la SPA con Django REST Framework y SimpleJWT. Variables de entorno (`VITE_API_URL`), configuración CORS para Vite (`localhost:5173`), cliente HTTP desacoplado (`api.js`), almacenamiento seguro de tokens JWT (`storage.js`), autenticación real (login/register asíncronos), persistencia de sesión por token (`/api/users/me/`), lista negra en logout (`/api/logout/`), Home dinámica consumiendo `/api/materias/` y `/api/examenes/`, y suite automatizada con 53 tests en Frontend y 54 tests en Backend bajo TDD y Clean Code. |
-| **Rama `detalles`** | **Clean Code & TDD Integral** | Reanálisis y refactorización integral: 51 tests automatizados en Django (incluyendo smoke tests de TP1, contratos de entidades/OpenAPI de TP2, validaciones de TP3 y casos de borde de TP4), 25 tests unitarios en Frontend (`node:test`), modularización de cálculos en `progress.js`, lógica pura de validación en `auth.js`, corrección de asignación de autoría en serializadores (`read_only_fields = ['usuario']`), validación de email duplicado y código libre de advertencias. |
+| **TP 9** | **Vistas Completas de Usuario y Auditoría** | Implementación de vistas CRUD completas (`MateriasList`, `MateriaDetail`, `ExamenesList`, `Profile`), importación/exportación masiva en CSV, servicio de historial de cambios y auditoría local (`activityLogService`), protección de rutas por roles (`RoleProtectedRoute`), y sincronización bidireccional automática del estado de aprobación de asignaturas (`sincronizar_estado_aprobacion`). |
+| **TP 10** | **Despliegue en la Nube (Producción)** | Publicación de la API en Render con base de datos PostgreSQL, servicio de estáticos comprimidos con WhiteNoise, servidor WSGI Gunicorn, endpoint activo de salud (`GET /api/health/`), despliegue del frontend SPA en Vercel con rewrites para navegación limpia, y documentación completa del proceso de deploy. |
 
 ---
 
@@ -98,27 +108,32 @@ erDiagram
         int id PK
         int materia_id FK
         date fecha
-        decimal nota "0.00 - 20.00 (opcional)"
-        string tipo "PAR | FIN | PRO"
+        decimal nota "0.00 - 10.00 (opcional)"
+        string tipo "FIN | PRO"
     }
 ```
 
 ### Reglas de Integridad y Lógica de Negocio
 1. **Cascada (`CASCADE`)**: La eliminación de un usuario remueve sus materias y exámenes dependientes.
-2. **Aislamiento de Recursos**: Los estudiantes y docentes solo pueden consultar y operar sobre sus propias materias y exámenes asociados.
+2. **Aislamiento de Recursos**: Los estudiantes solo pueden consultar y operar sobre sus propias materias y exámenes asociados.
 3. **Bypass Administrativo**: El rol `ADMIN` posee visibilidad global y permisos de modificación/eliminación sobre cualquier recurso académico.
 4. **Protección de Facultades**: La lectura de facultades es pública; su alta, baja y modificación está reservada al administrador (`IsAdminOnly`).
+5. **Sincronización Bidireccional de Aprobación**: Registrar un examen final o promoción con nota $\ge$ 6 conmuta automáticamente la materia a `APR`. Si el examen se elimina o degrada a aplazo, revierte a `REG`.
 
 ---
 
 ## 🔌 Endpoints de la API REST
 
-Documentación interactiva disponible en Swagger UI: `http://localhost:8000/api/docs/`
+Documentación interactiva disponible en Swagger UI:
+- **Producción**: [https://gestor-apo.onrender.com/api/docs/](https://gestor-apo.onrender.com/api/docs/)
+- **Local**: `http://localhost:8000/api/docs/`
 
 | Método | Endpoint | Rol Requerido | Descripción |
 | :--- | :--- | :--- | :--- |
+| `GET` | `/api/health/` | Público | Health check activo con monitoreo de base de datos PostgreSQL (TP10). |
 | `POST` | `/api/token/` | Público | Obtiene par de tokens JWT (`access` y `refresh`). |
 | `POST` | `/api/token/refresh/` | Público | Renueva el token de acceso mediante el token de actualización. |
+| `POST` | `/api/logout/` | Autenticado | Invalida el refresh token agregándolo a la lista negra (`TokenBlacklist`). |
 | `POST` | `/api/users/register/` | Público | Registro de nuevos usuarios (rol inicial `ESTUDIANTE`). |
 | `GET` | `/api/users/me/` | Autenticado | Obtiene la información del perfil del usuario en sesión. |
 | `GET` | `/api/facultades/` | Público | Lista todas las facultades registradas. |
@@ -126,12 +141,12 @@ Documentación interactiva disponible en Swagger UI: `http://localhost:8000/api/
 | `GET` | `/api/facultades/{id}/`| Público | Obtiene el detalle de una facultad específica. |
 | `PUT/PATCH/DELETE` | `/api/facultades/{id}/` | `ADMIN` | Modifica o da de baja una facultad. |
 | `GET` | `/api/materias/` | Autenticado | Lista materias propias (los `ADMIN` ven todas). |
-| `POST` | `/api/materias/` | `ADMIN`, `DOCENTE` | Crea una materia (asignación automática del autor autenticado). |
+| `POST` | `/api/materias/` | Autenticado | Crea una materia (asignación automática del autor autenticado). |
 | `GET` | `/api/materias/{id}/` | Propietario / `ADMIN` | Obtiene el detalle de una materia. |
 | `PUT/PATCH/DELETE` | `/api/materias/{id}/` | Propietario / `ADMIN` | Modifica o elimina una materia propia. |
-| `GET` | `/api/examenes/` | Autenticado | Lista exámenes asociados a materias propias. |
-| `POST` | `/api/examenes/` | `ADMIN`, `DOCENTE` | Registra examen para una materia propia (o cualquiera si es `ADMIN`). |
-| `PUT/PATCH/DELETE` | `/api/examenes/{id}/` | Propietario / `ADMIN` | Modifica o elimina un examen asociado a su materia. |
+| `GET` | `/api/examenes/` | Autenticado | Lista mesas de examen asociadas a materias propias. |
+| `POST` | `/api/examenes/` | Autenticado | Registra mesa de examen para una materia propia (o cualquiera si es `ADMIN`). |
+| `PUT/PATCH/DELETE` | `/api/examenes/{id}/` | Propietario / `ADMIN` | Modifica o elimina una mesa de examen asociada a su materia. |
 
 ---
 
@@ -155,35 +170,31 @@ El cliente web se encuentra en el directorio [`Frontend/`](file:///home/alejrz/p
 El proyecto cuenta con suites de prueba automatizadas tanto en el backend como en el frontend, diseñadas bajo el ciclo **Red → Green → Refactor**:
 
 ### 1. Pruebas de Backend (Django Test Suite)
-Ejecuta 51 pruebas de integración, comportamiento, infraestructura y contratos de API utilizando base de datos en memoria (`sqlite3`):
+Ejecuta 72 pruebas automáticas de integración, comportamiento, infraestructura, casos de borde y contratos de API:
 ```bash
-python manage.py test --settings=Gestor.test_settings -v 2
+python manage.py test core users
 ```
 **Casos cubiertos:**
 - **Infraestructura y Configuración Base (TP1)**: Verificación de `INSTALLED_APPS`, orden y prioridad de `CorsMiddleware` y disponibilidad del panel administrativo (`/admin/login/`).
 - **Modelado de Datos y OpenAPI (TP2)**: Representación semántica de entidades (`__str__` en `Facultad`, `Materia`, `Examen`) y disponibilidad pública de Swagger UI (`/api/docs/`) y esquema OpenAPI (`/api/schema/`).
-- **Identidad, Seguridad y Roles (TP3)**: Autenticación JWT (login exitoso, credenciales inválidas, refresh de token), registro con validación obligatoria y única de email/username, propiedades semánticas de roles (`is_admin`, `is_docente`, `is_estudiante`) y consulta de perfil propio (`/api/users/me/`).
-- **Casos de Borde y Reglas de Negocio (TP4)**: Rechazo de choices inválidos en estados de materia y tipos de examen ('XXX'), nombres en blanco, validaciones de rango (notas 0-20, años lectivos 1900-2100, créditos no negativos), soporte de nota nula (examen pendiente) y resolución de los 10 bugs de la matriz de pruebas.
-- Aislamiento multi-inquilino por usuario en consultas GET de materias y exámenes.
-- Control estricto de permisos RBAC para facultades, materias y exámenes con bypass administrativo verificado.
+- **Identidad, Seguridad y Roles (TP3)**: Autenticación JWT (login exitoso, credenciales inválidas, refresh de token, lista negra), registro con validación obligatoria y única de email/username, propiedades semánticas de roles (`is_admin`, `is_docente`, `is_estudiante`) y consulta de perfil propio (`/api/users/me/`).
+- **Casos de Borde y Reglas de Negocio (TP4)**: Rechazo de choices inválidos en estados de materia y tipos de examen, nombres en blanco, validaciones de rango (notas 0-10, años lectivos 1-10 o 1900-2100, créditos no negativos), soporte de nota nula (examen pendiente) y resolución de bugs de la matriz de pruebas.
+- **Sincronización Bidireccional de Dominio (TP9)**: Método `materia.sincronizar_estado_aprobacion()` que conmuta a `APR` con examen aprobado y restituye a `REG` si se degrada o elimina.
+- **Despliegue y Monitoreo en la Nube (TP10)**: Endpoint `GET /api/health/` con verificación activa de conectividad con la base de datos PostgreSQL.
+- Aislamiento multi-inquilino por usuario en consultas GET, POST, PATCH y DELETE con prevención estricta de IDOR.
 
 ### 2. Pruebas de Frontend (Node.js Native Test Runner)
-Ejecuta 25 pruebas unitarias sin dependencias externas pesadas:
+Ejecuta 161 pruebas unitarias y de integración bajo TDD estricto:
 ```bash
 npm --prefix Frontend test
 ```
 **Casos cubiertos:**
-- **Progreso Académico y Semáforo (11 tests)**:
-  - Redondeo y cálculo de porcentaje de créditos.
-  - Manejo de bordes: división por cero, créditos negativos, valores no numéricos o `NaN`.
-  - Clasificación estricta de rangos de semáforo (0, 39, 40, 74, 75, 100).
-  - Normalización bidireccional de estados de cursada (`APR`, `REG`, `CUR`, `PEN`, `REC`) y badges semánticos de Bootstrap.
-- **Autenticación y Validación en Memoria TP7 (14 tests)**:
-  - Validación de formato regex de email y rechazo de cadenas inválidas/nulas.
-  - Autenticación con credenciales válidas, insensibilidad a mayúsculas/espacios y no exposición de contraseñas.
-  - Rechazo de contraseñas incorrectas o usuarios inexistentes con mensajes de error descriptivos.
-  - Validación integral de registro: longitud mínima de contraseña (4 caracteres), unicidad de usuario y unicidad de correo electrónico.
-  - Creación y normalización de usuarios con rol `estudiante`.
+- **Progreso Académico y Semáforo (`progress.test.js`)**: Redondeo y cálculo de porcentaje de créditos, clasificación estricta de semáforo (0-39, 40-74, 75-100), badges semánticos, cálculo de promedios con aplazos y sin aplazos.
+- **Servicios de Comunicación API (`api.test.js`)**: Manejo de errores traducidos al español, interceptor de autenticación Bearer, singleton lock para refresco de tokens concurrentes sin race conditions.
+- **Servicio de Autenticación (`authService.test.js`)**: Login, registro, logout con blacklist, refresco y sesión persistida.
+- **Servicio Académico (`academicService.test.js`)**: Operaciones CRUD completas de materias y exámenes, dashboard consolidado y paginación.
+- **Control de Acceso y Rutas Protegidas (`roles.test.js` y `RoleProtectedRoute.test.js`)**: Verificación de permisos RBAC para estudiantes, docentes y administradores.
+- **Historial de Auditoría Local (`activityLogService.test.js`)**: Registro cronológico de acciones y vaciado seguro.
 
 ---
 

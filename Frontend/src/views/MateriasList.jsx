@@ -77,7 +77,8 @@ function MateriasList() {
     const ids = new Set()
     for (const ex of examenes) {
       const nota = ex?.nota !== null && ex?.nota !== undefined ? Number(ex.nota) : null
-      if (nota !== null && nota >= 6) {
+      const tipo = ex?.tipo
+      if (nota !== null && nota >= 6 && (!tipo || tipo === 'FIN' || tipo === 'PRO')) {
         const matId = typeof ex.materia === 'object' ? ex.materia?.id : ex.materia
         if (matId) ids.add(Number(matId))
       }

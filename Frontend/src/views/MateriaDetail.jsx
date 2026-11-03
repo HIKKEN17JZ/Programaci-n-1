@@ -448,7 +448,11 @@ function MateriaDetail() {
         <MateriaModal
           isOpen={materiaModalOpen}
           materiaAEditar={materia}
-          tieneExamenAprobado={examenes.some((ex) => ex?.nota !== null && ex?.nota !== undefined && Number(ex.nota) >= 6)}
+          tieneExamenAprobado={examenes.some((ex) => {
+            const nota = ex?.nota !== null && ex?.nota !== undefined ? Number(ex.nota) : null
+            const tipo = ex?.tipo
+            return nota !== null && nota >= 6 && (!tipo || tipo === 'FIN' || tipo === 'PRO')
+          })}
           onClose={() => setMateriaModalOpen(false)}
           onSuccess={handleModalMateriaSuccess}
         />
