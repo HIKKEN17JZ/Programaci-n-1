@@ -26,6 +26,32 @@
 
 ---
 
+## 📦 Pasos Detallados para la API (Backend en Render - 100% Gratuito)
+
+1. **Crear Base de Datos PostgreSQL en Render**:
+   - Ingresar a [render.com](https://render.com/) con cuenta de GitHub.
+   - Hacer clic en **"New +"** → **"PostgreSQL"**.
+   - Nombre: `gestor-db`, Plan: **Free**.
+   - Presionar **"Create Database"** y copiar la **Internal Database URL** (o External).
+
+2. **Crear Web Service para la API**:
+   - Hacer clic en **"New +"** → **"Web Service"**.
+   - Conectar el repositorio `HIKKEN17JZ/Programaci-n-1` y la rama `feature/deploy_tp10` (o `main`).
+   - Runtime: `Python 3`.
+   - **Build Command**: `pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py migrate`
+   - **Start Command**: `gunicorn Gestor.wsgi:application`
+   - Plan: **Free**.
+
+3. **Variables de Entorno en Render**:
+   - `DATABASE_URL`: Pegar la URL de la base de datos copiada en el paso 1.
+   - `SECRET_KEY`: Clave segura aleatoria de Django.
+   - `DEBUG`: `False`
+   - `ALLOWED_HOSTS`: `.onrender.com`
+
+*(Alternativa: Si se usa el archivo `render.yaml` incluido en el repositorio, Render crea la base de datos y el servicio web automáticamente mediante Blueprint).*
+
+---
+
 ## 📦 Pasos Detallados para la API (Backend en Railway)
 
 1. **Crear Proyecto en Railway**:
