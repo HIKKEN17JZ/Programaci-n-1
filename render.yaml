@@ -1,0 +1,24 @@
+databases:
+  - name: gestor-db
+    databaseName: gestor_db
+    user: gestor_user
+    plan: free
+
+services:
+  - type: web
+    name: gestor-api
+    runtime: python
+    plan: free
+    buildCommand: "pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py migrate"
+    startCommand: "gunicorn Gestor.wsgi:application"
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: gestor-db
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: ALLOWED_HOSTS
+        value: ".onrender.com"
