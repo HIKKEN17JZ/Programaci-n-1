@@ -2,10 +2,10 @@
 
 ## 🌐 URLs de Producción
 
+- **Frontend Público**: `https://academicogestor.vercel.app`
 - **API Pública**: `https://gestor-apo.onrender.com/api`
 - **Documentación Swagger / OpenAPI**: `https://gestor-apo.onrender.com/api/docs/`
 - **Health Check**: `https://gestor-apo.onrender.com/api/health/`
-- **Frontend Público**: *(Vercel)*
 - **Almacenamiento Media (Cloudinary)**: No aplica (el modelo de dominio académico no utiliza subida de imágenes o archivos multimedia).
 
 ---
