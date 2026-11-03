@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth.js'
 
 function Navbar() {
@@ -11,7 +11,7 @@ function Navbar() {
   }
 
   return (
-    <nav className="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+    <nav className="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm sticky-top">
       <div className="container">
         <Link to="/" className="navbar-brand fw-semibold d-flex align-items-center gap-2">
           <svg
@@ -27,19 +27,78 @@ function Navbar() {
           </svg>
           <span>Gestión de Carrera</span>
         </Link>
-        <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navegacionPrincipal" aria-controls="navegacionPrincipal" aria-expanded="false" aria-label="Abrir navegación">
+
+        <button
+          className="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navegacionPrincipal"
+          aria-controls="navegacionPrincipal"
+          aria-expanded="false"
+          aria-label="Abrir navegación"
+        >
           <span className="navbar-toggler-icon" />
         </button>
+
         <div className="collapse navbar-collapse" id="navegacionPrincipal">
-          <ul className="navbar-nav ms-auto align-items-lg-center gap-lg-2">
-            <li className="nav-item"><Link to="/" className="nav-link active" aria-current="page">Inicio</Link></li>
-            <li className="nav-item"><a href="#plan-estudio" className="nav-link">Plan de Estudio</a></li>
-            <li className="nav-item"><a href="#mesas-examen" className="nav-link">Mesas de Examen</a></li>
+          <ul className="navbar-nav ms-auto align-items-lg-center gap-lg-1">
+            <li className="nav-item">
+              <NavLink
+                to="/"
+                end
+                className={({ isActive }) => `nav-link ${isActive ? 'active fw-semibold' : ''}`}
+              >
+                Inicio
+              </NavLink>
+            </li>
+            <li className="nav-item">
+              <NavLink
+                to="/materias"
+                className={({ isActive }) => `nav-link ${isActive ? 'active fw-semibold' : ''}`}
+              >
+                Plan de Estudio
+              </NavLink>
+            </li>
+            <li className="nav-item">
+              <NavLink
+                to="/examenes"
+                className={({ isActive }) => `nav-link ${isActive ? 'active fw-semibold' : ''}`}
+              >
+                Mesas de Examen
+              </NavLink>
+            </li>
           </ul>
+
           {user ? (
             <div className="d-flex align-items-center gap-2 mt-2 mt-lg-0 ms-lg-3">
-              <span className="navbar-text text-white">Hola, {user.username}</span>
-              <button type="button" className="btn btn-outline-light btn-sm" onClick={handleLogout}>Cerrar sesión</button>
+              <NavLink
+                to="/perfil"
+                className={({ isActive }) =>
+                  `btn btn-outline-light btn-sm d-inline-flex align-items-center gap-1 ${
+                    isActive ? 'active' : ''
+                  }`
+                }
+                title="Ver mi perfil"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="14"
+                  height="14"
+                  fill="currentColor"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                >
+                  <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4zm-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10c-2.29 0-3.516.68-4.168 1.332-.678.678-.83 1.418-.832 1.664h10z" />
+                </svg>
+                <span>Hola, {user.username}</span>
+              </NavLink>
+              <button
+                type="button"
+                className="btn btn-outline-light btn-sm"
+                onClick={handleLogout}
+              >
+                Cerrar sesión
+              </button>
             </div>
           ) : (
             <div className="d-flex gap-2 mt-2 mt-lg-0 ms-lg-3">

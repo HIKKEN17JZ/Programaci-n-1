@@ -72,7 +72,10 @@ describe('Servicio de Autenticación (authService - TP8 - TDD)', () => {
     const result = await authService.login('alumno', 'password_erroneo')
 
     assert.strictEqual(result.ok, false)
-    assert.strictEqual(result.message, 'No active account found with the given credentials')
+    assert.strictEqual(
+      result.message,
+      'Usuario o contraseña incorrectos. Por favor, verificá tus datos e intentalo nuevamente.'
+    )
     assert.strictEqual(tokensGuardados, null)
   })
 
@@ -360,7 +363,26 @@ describe('Servicio de Autenticación (authService - TP8 - TDD)', () => {
     })
 
     assert.strictEqual(result.ok, false)
-    assert.strictEqual(result.message, 'username: A user with that username already exists.')
+    assert.strictEqual(result.message, 'username: Ya existe un usuario con ese nombre de usuario.')
+  })
+
+  it('updateProfile: envía PATCH a /users/me/ con los datos a actualizar', async () => {
+    let endpointLlamado = null
+    let payloadEnviado = null
+    const fakeApiClient = {
+      patch: async (endpoint, body) => {
+        endpointLlamado = endpoint
+        payloadEnviado = body
+        return { id: 1, plan_estudio_nombre: body.plan_estudio_nombre }
+      },
+    }
+
+    const authService = createAuthService({ apiClient: fakeApiClient, storage: {} })
+    const res = await authService.updateProfile({ plan_estudio_nombre: 'Medicina' })
+
+    assert.strictEqual(endpointLlamado, '/users/me/')
+    assert.deepStrictEqual(payloadEnviado, { plan_estudio_nombre: 'Medicina' })
+    assert.strictEqual(res.plan_estudio_nombre, 'Medicina')
   })
 })
 

@@ -110,6 +110,10 @@ export function createAuthService({ apiClient = api, storage = tokenStorage } = 
     }
   }
 
+  async function updateProfile(datos) {
+    return await apiClient.patch('/users/me/', datos)
+  }
+
   async function logout() {
     const refreshTokenValue = storage.getRefreshToken ? storage.getRefreshToken() : null
     if (refreshTokenValue) {
@@ -132,6 +136,7 @@ export function createAuthService({ apiClient = api, storage = tokenStorage } = 
     register,
     refreshToken,
     getCurrentUser,
+    updateProfile,
     logout,
   }
 }

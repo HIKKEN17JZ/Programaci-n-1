@@ -41,20 +41,28 @@ class UserAuthenticationTests(APITestCase):
         self.assertIn('refresh', response.data)
 
     def test_obtain_jwt_token_invalid_password(self):
-        """Credenciales incorrectas devuelven 401 Unauthorized."""
+        """Credenciales incorrectas devuelven 401 Unauthorized y mensaje en español."""
         response = self.client.post('/api/token/', {
             'username': 'docente_user',
             'password': 'WrongPassword'
         })
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(
+            response.data.get('detail'),
+            'Usuario o contraseña incorrectos. Por favor, verificá tus datos e intentalo nuevamente.'
+        )
 
     def test_obtain_jwt_token_nonexistent_user(self):
-        """Usuario inexistente devuelve 401 Unauthorized."""
+        """Usuario inexistente devuelve 401 Unauthorized y mensaje en español."""
         response = self.client.post('/api/token/', {
             'username': 'nadie',
             'password': 'Password123!'
         })
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(
+            response.data.get('detail'),
+            'Usuario o contraseña incorrectos. Por favor, verificá tus datos e intentalo nuevamente.'
+        )
 
     def test_refresh_jwt_token_success(self):
         """Token refresh válido devuelve nuevo token access."""
@@ -104,6 +112,41 @@ class UserAuthenticationTests(APITestCase):
         self.assertEqual(response.data['email'], 'alumno@test.edu.ar')
         self.assertEqual(response.data['role'], User.Role.ESTUDIANTE)
         self.assertEqual(response.data['facultad'], self.facultad.id)
+
+    def test_user_me_update_plan_estudio_nombre(self):
+        """Usuario autenticado puede actualizar el nombre de su plan de estudio / carrera."""
+        self.client.force_authenticate(user=self.estudiante)
+        response = self.client.patch('/api/users/me/', {
+            'plan_estudio_nombre': 'Medicina'
+        })
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['plan_estudio_nombre'], 'Medicina')
+        self.estudiante.refresh_from_db()
+        self.assertEqual(self.estudiante.plan_estudio_nombre, 'Medicina')
+
+    def test_user_me_role_is_read_only(self):
+        """Intento de elevar rol mediante PATCH en /api/users/me/ es ignorado (read_only)."""
+        self.client.force_authenticate(user=self.estudiante)
+        response = self.client.patch('/api/users/me/', {
+            'role': User.Role.ADMIN
+        })
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.estudiante.refresh_from_db()
+        self.assertEqual(self.estudiante.role, User.Role.ESTUDIANTE)
+
+    def test_user_me_username_and_email_are_read_only(self):
+        """Intento de cambiar username o email en /api/users/me/ es ignorado (read_only)."""
+        self.client.force_authenticate(user=self.estudiante)
+        response = self.client.patch('/api/users/me/', {
+            'username': 'hacked_username',
+            'email': 'hacked@email.com',
+            'plan_estudio_nombre': 'Arquitectura'
+        })
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.estudiante.refresh_from_db()
+        self.assertEqual(self.estudiante.username, 'alumno_user')
+        self.assertEqual(self.estudiante.email, 'alumno@test.edu.ar')
+        self.assertEqual(self.estudiante.plan_estudio_nombre, 'Arquitectura')
 
     def test_user_me_anonymous_forbidden(self):
         """Petición anónima a /api/users/me/ devuelve 401 Unauthorized."""

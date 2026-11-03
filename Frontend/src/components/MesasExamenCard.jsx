@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom'
+
 function MesasExamenCard({ mesas }) {
   return (
     <div id="mesas-examen" className="col-12 col-md-4 mb-4">
@@ -11,16 +13,24 @@ function MesasExamenCard({ mesas }) {
               {mesas.map((mesa) => (
                 <li key={mesa.id || `${mesa.materia}-${mesa.fecha}`} className="d-flex justify-content-between align-items-center mb-2">
                   <span className="me-2 text-break">{mesa.materia} — {mesa.llamado}</span>
-                  <span className={`badge ${mesa.nota === null ? 'text-bg-secondary' : 'text-bg-success'} text-nowrap`}>
+                  <span
+                    className={`badge ${
+                      mesa.nota === null
+                        ? 'text-bg-secondary'
+                        : Number(mesa.nota) >= 6
+                        ? 'text-bg-success'
+                        : 'text-bg-danger'
+                    } text-nowrap`}
+                  >
                     {mesa.nota === null ? 'Pendiente' : `Nota ${mesa.nota}`}
                   </span>
                 </li>
               ))}
             </ul>
           )}
-          <a href="#" className="btn btn-outline-primary btn-sm mt-auto" onClick={(e) => e.preventDefault()}>
+          <Link to="/examenes" className="btn btn-outline-primary btn-sm mt-auto">
             Ver más
-          </a>
+          </Link>
         </div>
       </div>
     </div>

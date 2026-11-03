@@ -6,8 +6,11 @@ import {
   SEMAFORO,
   ESTADO_BADGE,
   obtenerEtiquetaEstado,
+  formatearNivelCarrera,
   calcularCreditos,
   formatearMesaExamen,
+  calcularPromedio,
+  calcularMetricasExamenes,
 } from './progress.js'
 
 describe('Utilidades de Progreso Académico', () => {
@@ -99,6 +102,29 @@ describe('Utilidades de Progreso Académico', () => {
     })
   })
 
+  describe('formatearNivelCarrera', () => {
+    it('formatea niveles de carrera a etiquetas legibles (1er Año, 2do Año, etc.)', () => {
+      assert.strictEqual(formatearNivelCarrera(1), '1er Año')
+      assert.strictEqual(formatearNivelCarrera('1'), '1er Año')
+      assert.strictEqual(formatearNivelCarrera(2), '2do Año')
+      assert.strictEqual(formatearNivelCarrera(3), '3er Año')
+      assert.strictEqual(formatearNivelCarrera(4), '4to Año')
+      assert.strictEqual(formatearNivelCarrera(5), '5to Año')
+      assert.strictEqual(formatearNivelCarrera(6), '6to Año')
+    })
+
+    it('conserva años calendario legados de 4 dígitos', () => {
+      assert.strictEqual(formatearNivelCarrera(2024), '2024')
+      assert.strictEqual(formatearNivelCarrera('2025'), '2025')
+    })
+
+    it('devuelve "Sin especificar" si el valor es nulo o inválido', () => {
+      assert.strictEqual(formatearNivelCarrera(null), 'Sin especificar')
+      assert.strictEqual(formatearNivelCarrera(0), 'Sin especificar')
+      assert.strictEqual(formatearNivelCarrera('abc'), 'Sin especificar')
+    })
+  })
+
   describe('calcularCreditos', () => {
     it('calcula créditos totales y obtenidos a partir de la lista de materias de la API', () => {
       const materias = [
@@ -155,6 +181,45 @@ describe('Utilidades de Progreso Académico', () => {
 
       const res3 = formatearMesaExamen({ id: 22, materia: '99', fecha: '2026-12-22' }, materias)
       assert.strictEqual(res3.materia, 'Materia #99')
+    })
+  })
+
+  describe('calcularPromedio y calcularMetricasExamenes (TDD)', () => {
+    const examenes = [
+      { id: 1, nota: 8 },
+      { id: 2, nota: 4 },
+      { id: 3, nota: 2 }, // aplazo
+      { id: 4, nota: null }, // no rendido aún
+      { id: 5, nota: '10' }, // parseable a number
+    ]
+
+    it('calcularPromedio calcula el promedio general con decimales', () => {
+      // Notas: 8 + 4 + 2 + 10 = 24 / 4 = 6.00
+      assert.strictEqual(calcularPromedio(examenes), 6.0)
+    })
+
+    it('calcularPromedio soporta calcular solo sobre exámenes aprobados (nota >= 6)', () => {
+      // Aprobadas (>= 6): 8 + 10 = 18 / 2 = 9.00
+      assert.strictEqual(calcularPromedio(examenes, { soloAprobados: true }), 9.0)
+    })
+
+    it('calcularPromedio devuelve 0 de forma segura si no hay exámenes con nota', () => {
+      assert.strictEqual(calcularPromedio([]), 0)
+      assert.strictEqual(calcularPromedio(null), 0)
+      assert.strictEqual(calcularPromedio([{ nota: null }, { nota: undefined }]), 0)
+    })
+
+    it('calcularMetricasExamenes consolida totales, rendidos, aprobados, aplazados y promedios con alias compatibles', () => {
+      const metricas = calcularMetricasExamenes(examenes)
+      assert.strictEqual(metricas.total, 5)
+      assert.strictEqual(metricas.rendidos, 4)
+      assert.strictEqual(metricas.aprobados, 2)
+      assert.strictEqual(metricas.aplazados, 2)
+      assert.strictEqual(metricas.promedioGeneral, 6.0)
+      assert.strictEqual(metricas.promedioAprobados, 9.0)
+      // Alias requeridos por paneles del dashboard (Home / Mesas / Progreso)
+      assert.strictEqual(metricas.promedioConAplazos, 6.0)
+      assert.strictEqual(metricas.promedioSinAplazos, 9.0)
     })
   })
 })

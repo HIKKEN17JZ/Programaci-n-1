@@ -97,4 +97,156 @@ describe('Servicio Académico (academicService - TP8 - TDD)', () => {
     assert.strictEqual(examenes.length, 1)
     assert.strictEqual(examenes[0].id, 5)
   })
+
+  describe('Operaciones CRUD de Materias (TP9 - TDD)', () => {
+    it('getMateriaById consulta el endpoint específico /materias/:id/', async () => {
+      let requested = ''
+      const fakeApiClient = {
+        get: async (endpoint) => {
+          requested = endpoint
+          return { id: 7, nombre: 'Física I' }
+        },
+      }
+      const service = createAcademicService({ apiClient: fakeApiClient })
+      const res = await service.getMateriaById(7)
+      assert.strictEqual(requested, '/materias/7/')
+      assert.strictEqual(res.nombre, 'Física I')
+    })
+
+    it('createMateria envía POST a /materias/ con payload', async () => {
+      let callInfo = null
+      const fakeApiClient = {
+        post: async (endpoint, payload) => {
+          callInfo = { endpoint, payload }
+          return { id: 12, ...payload }
+        },
+      }
+      const service = createAcademicService({ apiClient: fakeApiClient })
+      const payload = { nombre: 'Química', año_dictado: 2026, creditos_totales: 6, estado: 'CUR' }
+      const res = await service.createMateria(payload)
+
+      assert.strictEqual(callInfo.endpoint, '/materias/')
+      assert.strictEqual(callInfo.payload.nombre, 'Química')
+      assert.strictEqual(res.id, 12)
+    })
+
+    it('updateMateria envía PUT o PATCH a /materias/:id/', async () => {
+      let putCall = null
+      let patchCall = null
+      const fakeApiClient = {
+        put: async (endpoint, payload) => {
+          putCall = { endpoint, payload }
+          return { id: 12, ...payload }
+        },
+        patch: async (endpoint, payload) => {
+          patchCall = { endpoint, payload }
+          return { id: 12, ...payload }
+        },
+      }
+      const service = createAcademicService({ apiClient: fakeApiClient })
+      await service.updateMateria(12, { nombre: 'Química Orgánica' })
+      await service.patchMateria(12, { estado: 'APR' })
+
+      assert.strictEqual(putCall.endpoint, '/materias/12/')
+      assert.strictEqual(putCall.payload.nombre, 'Química Orgánica')
+      assert.strictEqual(patchCall.endpoint, '/materias/12/')
+      assert.strictEqual(patchCall.payload.estado, 'APR')
+    })
+
+    it('deleteMateria envía DELETE a /materias/:id/', async () => {
+      let deletedEndpoint = ''
+      const fakeApiClient = {
+        delete: async (endpoint) => {
+          deletedEndpoint = endpoint
+          return null
+        },
+      }
+      const service = createAcademicService({ apiClient: fakeApiClient })
+      await service.deleteMateria(15)
+      assert.strictEqual(deletedEndpoint, '/materias/15/')
+    })
+  })
+
+  describe('Operaciones CRUD de Exámenes (TP9 - TDD)', () => {
+    it('getExamenById consulta /examenes/:id/', async () => {
+      let requested = ''
+      const fakeApiClient = {
+        get: async (endpoint) => {
+          requested = endpoint
+          return { id: 3, materia: 1, nota: 10 }
+        },
+      }
+      const service = createAcademicService({ apiClient: fakeApiClient })
+      const res = await service.getExamenById(3)
+      assert.strictEqual(requested, '/examenes/3/')
+      assert.strictEqual(res.nota, 10)
+    })
+
+    it('createExamen envía POST a /examenes/', async () => {
+      let postCall = null
+      const fakeApiClient = {
+        post: async (endpoint, payload) => {
+          postCall = { endpoint, payload }
+          return { id: 9, ...payload }
+        },
+      }
+      const service = createAcademicService({ apiClient: fakeApiClient })
+      const payload = { materia: 1, fecha: '2026-11-20', nota: 8, tipo: 'FIN' }
+      const res = await service.createExamen(payload)
+
+      assert.strictEqual(postCall.endpoint, '/examenes/')
+      assert.strictEqual(res.id, 9)
+    })
+
+    it('updateExamen envía PUT a /examenes/:id/', async () => {
+      let putCall = null
+      const fakeApiClient = {
+        put: async (endpoint, payload) => {
+          putCall = { endpoint, payload }
+          return { id: 9, ...payload }
+        },
+      }
+      const service = createAcademicService({ apiClient: fakeApiClient })
+      await service.updateExamen(9, { nota: 9 })
+      assert.strictEqual(putCall.endpoint, '/examenes/9/')
+      assert.strictEqual(putCall.payload.nota, 9)
+    })
+
+    it('deleteExamen envía DELETE a /examenes/:id/', async () => {
+      let deleteEndpoint = ''
+      const fakeApiClient = {
+        delete: async (endpoint) => {
+          deleteEndpoint = endpoint
+          return null
+        },
+      }
+      const service = createAcademicService({ apiClient: fakeApiClient })
+      await service.deleteExamen(9)
+      assert.strictEqual(deleteEndpoint, '/examenes/9/')
+    })
+  })
+
+  describe('Operaciones de Facultades (TP9 - TDD)', () => {
+    it('getFacultades y createFacultad conectan con /facultades/', async () => {
+      let calls = []
+      const fakeApiClient = {
+        get: async (endpoint) => {
+          calls.push({ method: 'GET', endpoint })
+          return [{ id: 1, nombre: 'Ingeniería', sede: 'Central' }]
+        },
+        post: async (endpoint, payload) => {
+          calls.push({ method: 'POST', endpoint, payload })
+          return { id: 2, ...payload }
+        },
+      }
+      const service = createAcademicService({ apiClient: fakeApiClient })
+      const facultades = await service.getFacultades()
+      const nueva = await service.createFacultad({ nombre: 'Ciencias Exactas', sede: 'Norte' })
+
+      assert.strictEqual(facultades.length, 1)
+      assert.strictEqual(nueva.id, 2)
+      assert.strictEqual(calls[0].endpoint, '/facultades/')
+      assert.strictEqual(calls[1].endpoint, '/facultades/')
+    })
+  })
 })

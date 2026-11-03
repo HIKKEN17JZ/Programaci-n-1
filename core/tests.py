@@ -164,8 +164,8 @@ class MateriaTests(BaseAPITestCase):
         materia_creada = Materia.objects.get(id=response.data['id'])
         self.assertEqual(materia_creada.usuario, self.docente1)
 
-    def test_create_materia_as_estudiante_forbidden(self):
-        """ESTUDIANTE no puede crear materias (restringido a ADMIN o DOCENTE)."""
+    def test_create_materia_as_estudiante_success(self):
+        """ESTUDIANTE puede crear materias para su propio plan de estudio personal."""
         self.client.force_authenticate(user=self.estudiante)
         payload = {
             'nombre': 'Física I',
@@ -174,7 +174,10 @@ class MateriaTests(BaseAPITestCase):
             'estado': 'CUR'
         }
         response = self.client.post('/api/materias/', payload)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['nombre'], 'Física I')
+        materia_creada = Materia.objects.get(id=response.data['id'])
+        self.assertEqual(materia_creada.usuario, self.estudiante)
 
     def test_update_own_materia_by_docente_success(self):
         """DOCENTE puede actualizar su propia materia."""
@@ -234,6 +237,20 @@ class MateriaTests(BaseAPITestCase):
         response = self.client.post('/api/materias/', payload)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('año_dictado', response.data)
+
+    def test_create_materia_nivel_carrera(self):
+        """Año de dictado como nivel de carrera (ej: 1er año) es aceptado exitosamente."""
+        self.client.force_authenticate(user=self.estudiante)
+        payload = {
+            'nombre': 'Álgebra y Geometría',
+            'año_dictado': 1,
+            'creditos_totales': 6,
+            'estado': 'CUR',
+            'es_promocionable': True,
+        }
+        response = self.client.post('/api/materias/', payload)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['año_dictado'], 1)
 
     def test_validation_creditos_negativos(self):
         """Créditos totales negativos son rechazados con 400."""
@@ -304,8 +321,38 @@ class ExamenTests(BaseAPITestCase):
         response = self.client.post('/api/examenes/', payload)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
+    def test_create_examen_aprobado_auto_aprueba_materia(self):
+        """Crear examen con nota >= 6 actualiza automáticamente el estado de la materia a APR."""
+        self.client.force_authenticate(user=self.docente1)
+        self.assertEqual(self.materia_docente1.estado, 'CUR')
+        payload = {
+            'materia': self.materia_docente1.id,
+            'fecha': '2026-08-10',
+            'nota': 8.0,
+            'tipo': 'FIN'
+        }
+        response = self.client.post('/api/examenes/', payload)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.materia_docente1.refresh_from_db()
+        self.assertEqual(self.materia_docente1.estado, 'APR')
+
+    def test_create_examen_desaprobado_no_aprueba_materia(self):
+        """Crear examen con nota < 6 mantiene el estado previo de la materia."""
+        self.client.force_authenticate(user=self.docente1)
+        self.assertEqual(self.materia_docente1.estado, 'CUR')
+        payload = {
+            'materia': self.materia_docente1.id,
+            'fecha': '2026-08-10',
+            'nota': 4.0,
+            'tipo': 'FIN'
+        }
+        response = self.client.post('/api/examenes/', payload)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.materia_docente1.refresh_from_db()
+        self.assertEqual(self.materia_docente1.estado, 'CUR')
+
     def test_create_examen_as_estudiante_forbidden(self):
-        """ESTUDIANTE no puede crear exámenes."""
+        """ESTUDIANTE no puede crear exámenes para materias que no le pertenecen."""
         self.client.force_authenticate(user=self.estudiante)
         payload = {
             'materia': self.materia_docente1.id,
@@ -315,6 +362,25 @@ class ExamenTests(BaseAPITestCase):
         }
         response = self.client.post('/api/examenes/', payload)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_create_examen_for_own_materia_as_estudiante_success(self):
+        """ESTUDIANTE puede registrar exámenes para sus propias materias."""
+        materia_propia = Materia.objects.create(
+            usuario=self.estudiante,
+            nombre='Química General',
+            año_dictado=2024,
+            creditos_totales=4,
+            estado='CUR'
+        )
+        self.client.force_authenticate(user=self.estudiante)
+        payload = {
+            'materia': materia_propia.id,
+            'fecha': '2026-07-20',
+            'nota': 8.0,
+            'tipo': 'FIN'
+        }
+        response = self.client.post('/api/examenes/', payload)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def test_validation_nota_negative_rejected(self):
         """Nota negativa (<0) es rechazada con 400 Bad Request."""
@@ -343,7 +409,7 @@ class ExamenTests(BaseAPITestCase):
         self.assertIn('nota', response.data)
 
     def test_validation_nota_null_allowed(self):
-        """Examen con nota null (sin calificar aún) es permitido (201 Created)."""
+        """Examen final con nota null (sin calificar aún) es permitido (201 Created)."""
         self.client.force_authenticate(user=self.docente1)
         payload = {
             'materia': self.materia_docente1.id,
@@ -354,6 +420,62 @@ class ExamenTests(BaseAPITestCase):
         response = self.client.post('/api/examenes/', payload, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertIsNone(response.data['nota'])
+
+    def test_promocion_nota_menor_a_6_rechazada(self):
+        """Una promoción con nota < 6 debe ser rechazada con 400 Bad Request."""
+        self.client.force_authenticate(user=self.docente1)
+        payload = {
+            'materia': self.materia_docente1.id,
+            'fecha': '2026-07-20',
+            'nota': 5.0,
+            'tipo': 'PRO'
+        }
+        response = self.client.post('/api/examenes/', payload)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('nota', response.data)
+
+    def test_promocion_sin_nota_rechazada(self):
+        """Una promoción sin nota debe ser rechazada con 400 Bad Request."""
+        self.client.force_authenticate(user=self.docente1)
+        payload = {
+            'materia': self.materia_docente1.id,
+            'fecha': '2026-07-20',
+            'nota': None,
+            'tipo': 'PRO'
+        }
+        response = self.client.post('/api/examenes/', payload, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('nota', response.data)
+
+    def test_promocion_nota_valida_crea_y_aprueba_materia(self):
+        """Una promoción con nota >= 6 se crea exitosamente y auto-aprueba la materia."""
+        self.client.force_authenticate(user=self.docente1)
+        payload = {
+            'materia': self.materia_docente1.id,
+            'fecha': '2026-07-20',
+            'nota': 8.0,
+            'tipo': 'PRO'
+        }
+        response = self.client.post('/api/examenes/', payload)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.materia_docente1.refresh_from_db()
+        self.assertEqual(self.materia_docente1.estado, 'APR')
+
+    def test_create_examen_for_already_approved_materia_rejected(self):
+        """Intento de crear un nuevo examen para una materia ya aprobada devuelve 400 Bad Request."""
+        self.materia_docente1.estado = 'APR'
+        self.materia_docente1.save()
+
+        self.client.force_authenticate(user=self.docente1)
+        payload = {
+            'materia': self.materia_docente1.id,
+            'fecha': '2026-07-20',
+            'nota': 7.0,
+            'tipo': 'FIN'
+        }
+        response = self.client.post('/api/examenes/', payload)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('materia', response.data)
 
     def test_delete_other_user_examen_by_docente_forbidden(self):
         """DOCENTE no puede eliminar exámenes de materias ajenas."""
@@ -366,6 +488,86 @@ class ExamenTests(BaseAPITestCase):
         self.client.force_authenticate(user=self.admin_user)
         response = self.client.delete(f'/api/examenes/{self.examen_docente1.id}/')
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+    def test_examen_nota_mayor_a_10_rejected(self):
+        """Notas mayores a 10 son rechazadas en el serializer (escala argentina 0 a 10)."""
+        self.client.force_authenticate(user=self.docente1)
+        payload = {
+            'materia': self.materia_docente1.id,
+            'fecha': '2026-07-20',
+            'nota': 11.0,
+            'tipo': 'FIN'
+        }
+        response = self.client.post('/api/examenes/', payload)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('nota', response.data)
+
+    def test_parcial_aprobado_no_auto_aprueba_materia(self):
+        """Un examen de tipo Parcial (PAR) con nota >= 6 NO debe auto-aprobar la materia."""
+        self.materia_docente1.estado = 'REG'
+        self.materia_docente1.save()
+
+        self.client.force_authenticate(user=self.docente1)
+        payload = {
+            'materia': self.materia_docente1.id,
+            'fecha': '2026-05-15',
+            'nota': 8.0,
+            'tipo': 'PAR'
+        }
+        response = self.client.post('/api/examenes/', payload)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.materia_docente1.refresh_from_db()
+        self.assertEqual(self.materia_docente1.estado, 'REG')
+
+    def test_update_examen_cannot_transfer_to_other_user_materia(self):
+        """No se puede reasignar un examen a una materia perteneciente a otro usuario (prevención IDOR)."""
+        self.client.force_authenticate(user=self.docente1)
+        response = self.client.patch(f'/api/examenes/{self.examen_docente1.id}/', {
+            'materia': self.materia_docente2.id
+        })
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_delete_examen_recalcula_estado_materia_si_era_el_unico_aprobado(self):
+        """Eliminar el examen aprobado devuelve la materia a REG (consistencia bidireccional)."""
+        self.client.force_authenticate(user=self.docente1)
+        # Crear examen aprobado
+        resp = self.client.post('/api/examenes/', {
+            'materia': self.materia_docente1.id,
+            'fecha': '2026-07-20',
+            'nota': 8.0,
+            'tipo': 'FIN'
+        })
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        self.materia_docente1.refresh_from_db()
+        self.assertEqual(self.materia_docente1.estado, 'APR')
+
+        # Eliminar el examen
+        del_resp = self.client.delete(f'/api/examenes/{resp.data["id"]}/')
+        self.assertEqual(del_resp.status_code, status.HTTP_204_NO_CONTENT)
+        self.materia_docente1.refresh_from_db()
+        self.assertEqual(self.materia_docente1.estado, 'REG')
+
+    def test_update_examen_nota_aplazada_restituye_estado_a_reg(self):
+        """Editar nota de examen aprobado a aplazo (<6) restituye la materia a REG."""
+        self.client.force_authenticate(user=self.docente1)
+        # Crear examen aprobado
+        resp = self.client.post('/api/examenes/', {
+            'materia': self.materia_docente1.id,
+            'fecha': '2026-07-20',
+            'nota': 9.0,
+            'tipo': 'FIN'
+        })
+        examen_id = resp.data["id"]
+        self.materia_docente1.refresh_from_db()
+        self.assertEqual(self.materia_docente1.estado, 'APR')
+
+        # Modificar nota a 4 (aplazo)
+        patch_resp = self.client.patch(f'/api/examenes/{examen_id}/', {
+            'nota': 4.0
+        })
+        self.assertEqual(patch_resp.status_code, status.HTTP_200_OK)
+        self.materia_docente1.refresh_from_db()
+        self.assertEqual(self.materia_docente1.estado, 'REG')
 
 
 class InfrastructureSmokeTestCase(TestCase):

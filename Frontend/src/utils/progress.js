@@ -44,6 +44,33 @@ export const ESTADO_LABEL = {
   REC: 'Recursando',
 }
 
+export const NIVELES_CARRERA = {
+  1: '1er Año',
+  2: '2do Año',
+  3: '3er Año',
+  4: '4to Año',
+  5: '5to Año',
+  6: '6to Año',
+}
+
+/**
+ * Formatea el nivel curricular de la materia en la carrera (ej: "1er Año", "2do Año").
+ * Si es un año calendario histórico (>= 1900), devuelve el año sin romper la visualización.
+ * @param {number|string} año
+ * @returns {string}
+ */
+export function formatearNivelCarrera(año) {
+  const num = Number(año)
+  if (isNaN(num) || num <= 0) return 'Sin especificar'
+  if (NIVELES_CARRERA[num]) {
+    return NIVELES_CARRERA[num]
+  }
+  if (num <= 10) {
+    return `${num}° Año`
+  }
+  return `${num}`
+}
+
 /**
  * Normaliza y devuelve la etiqueta legible para un estado de materia.
  *
@@ -153,4 +180,74 @@ export function formatearMesaExamen(examen = {}, materias = []) {
     nota: examen.nota !== undefined ? examen.nota : null,
   }
 }
+
+export const NOTA_MINIMA_APROBACION = 6
+
+/**
+ * Determina si una calificación es aprobatoria (nota >= 6).
+ * @param {number|string|null|undefined} nota
+ * @returns {boolean}
+ */
+export function isNotaAprobada(nota) {
+  if (nota === null || nota === undefined || nota === '') return false
+  const num = Number(nota)
+  return !Number.isNaN(num) && num >= NOTA_MINIMA_APROBACION
+}
+
+/**
+ * Calcula el promedio numérico a partir de una lista de exámenes.
+ *
+ * @param {Array} examenes - Lista de exámenes con propiedad nota.
+ * @param {object} [opciones]
+ * @param {boolean} [opciones.soloAprobados=false] - Si es true, considera solo notas >= 6.
+ * @returns {number} Promedio con hasta 2 decimales (0 si no hay notas válidas).
+ */
+export function calcularPromedio(examenes = [], { soloAprobados = false } = {}) {
+  if (!Array.isArray(examenes) || examenes.length === 0) {
+    return 0
+  }
+
+  const notasValidas = examenes
+    .map((e) => (e && e.nota !== null && e.nota !== undefined && e.nota !== '' ? Number(e.nota) : null))
+    .filter((n) => n !== null && !Number.isNaN(n))
+    .filter((n) => (!soloAprobados ? true : n >= NOTA_MINIMA_APROBACION))
+
+  if (notasValidas.length === 0) {
+    return 0
+  }
+
+  const suma = notasValidas.reduce((acc, curr) => acc + curr, 0)
+  return Number((suma / notasValidas.length).toFixed(2))
+}
+
+/**
+ * Genera métricas consolidadas sobre el historial de exámenes.
+ *
+ * @param {Array} examenes - Lista de exámenes.
+ * @returns {{ total: number, rendidos: number, aprobados: number, aplazados: number, promedioGeneral: number, promedioAprobados: number }}
+ */
+export function calcularMetricasExamenes(examenes = []) {
+  const lista = Array.isArray(examenes) ? examenes : []
+  const conNota = lista.filter(
+    (e) => e && e.nota !== null && e.nota !== undefined && e.nota !== '' && !Number.isNaN(Number(e.nota))
+  )
+  const aprobados = conNota.filter((e) => Number(e.nota) >= NOTA_MINIMA_APROBACION)
+  const aplazados = conNota.filter((e) => Number(e.nota) < NOTA_MINIMA_APROBACION)
+
+  const promedioGeneral = calcularPromedio(lista, { soloAprobados: false })
+  const promedioAprobados = calcularPromedio(lista, { soloAprobados: true })
+
+  return {
+    total: lista.length,
+    rendidos: conNota.length,
+    aprobados: aprobados.length,
+    aplazados: aplazados.length,
+    promedioGeneral,
+    promedioAprobados,
+    // Alias para asegurar compatibilidad con paneles de Inicio y Dashboard
+    promedioConAplazos: promedioGeneral,
+    promedioSinAplazos: promedioAprobados,
+  }
+}
+
 
