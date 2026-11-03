@@ -2,10 +2,10 @@
 
 ## 🌐 URLs de Producción
 
-- **API Pública**: `https://<tu-api>.up.railway.app/api` (o Render)
-- **Documentación Swagger / OpenAPI**: `https://<tu-api>.up.railway.app/api/docs/`
-- **Health Check**: `https://<tu-api>.up.railway.app/api/health/`
-- **Frontend Público**: `https://<tu-app>.vercel.app`
+- **API Pública**: `https://gestor-apo.onrender.com/api`
+- **Documentación Swagger / OpenAPI**: `https://gestor-apo.onrender.com/api/docs/`
+- **Health Check**: `https://gestor-apo.onrender.com/api/health/`
+- **Frontend Público**: *(Vercel)*
 - **Almacenamiento Media (Cloudinary)**: No aplica (el modelo de dominio académico no utiliza subida de imágenes o archivos multimedia).
 
 ---
