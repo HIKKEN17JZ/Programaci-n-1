@@ -7,8 +7,6 @@ import { activityLogService } from '../services/activityLogService.js'
 import { getRoleBadge, getRoleLabel } from '../utils/roles.js'
 import {
   obtenerSemaforo,
-  formatearNivelCarrera,
-  TIPO_EXAMEN_LABEL,
 } from '../utils/progress.js'
 
 function Profile() {
@@ -42,47 +40,6 @@ function Profile() {
       .then((data) => {
         if (!isMounted) return
         setDashboard(data)
-
-        // Sincronizar retroactivamente materias y exámenes existentes en el registro de auditoría si aún no estaban
-        if (user?.id && data) {
-          const logActual = activityLogService.getLog(user.id)
-          const idsRegistrados = new Set(logActual.map((e) => e.idReferencia).filter(Boolean))
-          let huboNuevos = false
-
-          ;(data.materias || []).forEach((m) => {
-            if (!idsRegistrados.has(String(m.id))) {
-              activityLogService.registrarAccion({
-                accion: 'CREAR',
-                entidad: 'MATERIA',
-                detalle: `Asignatura en plan de estudio: "${m.nombre}" (${formatearNivelCarrera(m.año_dictado)})`,
-                idReferencia: m.id,
-                userId: user.id,
-              })
-              idsRegistrados.add(String(m.id))
-              huboNuevos = true
-            }
-          })
-
-          ;(data.examenes || []).forEach((ex) => {
-            if (!idsRegistrados.has(String(ex.id))) {
-              const matAsoc = (data.materias || []).find((m) => String(m.id) === String(ex.materia))
-              const nombreMat = matAsoc ? matAsoc.nombre : `Materia #${ex.materia}`
-              activityLogService.registrarAccion({
-                accion: 'CREAR',
-                entidad: 'EXAMEN',
-                detalle: `Mesa de examen registrada: ${TIPO_EXAMEN_LABEL[ex.tipo] || ex.tipo} en "${nombreMat}" ${ex.nota !== null ? `(Nota: ${ex.nota})` : '(Pendiente)'}`,
-                idReferencia: ex.id,
-                userId: user.id,
-              })
-              idsRegistrados.add(String(ex.id))
-              huboNuevos = true
-            }
-          })
-
-          if (huboNuevos) {
-            setLogKey((prev) => prev + 1)
-          }
-        }
       })
       .catch(() => {
         // Fallback defensivo si el servicio no responde

@@ -234,13 +234,19 @@ export function calcularMetricasExamenes(examenes = []) {
   const aprobados = conNota.filter((e) => Number(e.nota) >= NOTA_MINIMA_APROBACION)
   const aplazados = conNota.filter((e) => Number(e.nota) < NOTA_MINIMA_APROBACION)
 
+  const promedioGeneral = calcularPromedio(lista, { soloAprobados: false })
+  const promedioAprobados = calcularPromedio(lista, { soloAprobados: true })
+
   return {
     total: lista.length,
     rendidos: conNota.length,
     aprobados: aprobados.length,
     aplazados: aplazados.length,
-    promedioGeneral: calcularPromedio(lista, { soloAprobados: false }),
-    promedioAprobados: calcularPromedio(lista, { soloAprobados: true }),
+    promedioGeneral,
+    promedioAprobados,
+    // Alias para asegurar compatibilidad con paneles de Inicio y Dashboard
+    promedioConAplazos: promedioGeneral,
+    promedioSinAplazos: promedioAprobados,
   }
 }
 

@@ -209,7 +209,7 @@ describe('Utilidades de Progreso Académico', () => {
       assert.strictEqual(calcularPromedio([{ nota: null }, { nota: undefined }]), 0)
     })
 
-    it('calcularMetricasExamenes consolida totales, rendidos, aprobados, aplazados y promedios', () => {
+    it('calcularMetricasExamenes consolida totales, rendidos, aprobados, aplazados y promedios con alias compatibles', () => {
       const metricas = calcularMetricasExamenes(examenes)
       assert.strictEqual(metricas.total, 5)
       assert.strictEqual(metricas.rendidos, 4)
@@ -217,6 +217,9 @@ describe('Utilidades de Progreso Académico', () => {
       assert.strictEqual(metricas.aplazados, 2)
       assert.strictEqual(metricas.promedioGeneral, 6.0)
       assert.strictEqual(metricas.promedioAprobados, 9.0)
+      // Alias requeridos por paneles del dashboard (Home / Mesas / Progreso)
+      assert.strictEqual(metricas.promedioConAplazos, 6.0)
+      assert.strictEqual(metricas.promedioSinAplazos, 9.0)
     })
   })
 })

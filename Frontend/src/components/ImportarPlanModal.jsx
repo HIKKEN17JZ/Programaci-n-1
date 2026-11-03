@@ -100,11 +100,35 @@ function ImportarPlanModalContent({ onClose, onSuccess }) {
     let creadas = 0
     const fallos = []
 
+    // Obtener materias existentes para prevenir duplicación por nombre
+    const materiasExistentes = await academicService.getMaterias().catch(() => [])
+    const nombresExistentes = new Set(
+      materiasExistentes.map((m) => (m?.nombre || '').trim().toLowerCase())
+    )
+
     for (let i = 0; i < materiasValidas.length; i++) {
       const materia = materiasValidas[i]
+      const nombreNorm = (materia?.nombre || '').trim().toLowerCase()
+
+      if (nombresExistentes.has(nombreNorm)) {
+        fallos.push(`"${materia.nombre}": Ya se encuentra registrada en tu plan de estudio.`)
+        setProgreso({ actual: i + 1, total: materiasValidas.length })
+        continue
+      }
+
+      // Descartar campos ajenos al modelo Django (ej: horas_semanales)
+      const payload = {
+        nombre: materia.nombre.trim(),
+        año_dictado: Number(materia.año_dictado),
+        creditos_totales: Number(materia.creditos_totales || 0),
+        estado: materia.estado || 'PEN',
+        es_promocionable: materia.es_promocionable !== false,
+      }
+
       try {
-        const res = await academicService.createMateria(materia)
+        const res = await academicService.createMateria(payload)
         creadas++
+        nombresExistentes.add(nombreNorm)
         activityLogService.registrarAccion({
           accion: 'CREAR',
           entidad: 'MATERIA',

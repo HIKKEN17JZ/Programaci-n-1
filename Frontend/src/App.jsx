@@ -1,7 +1,7 @@
 import { Outlet, Route, Routes } from 'react-router-dom'
 import Navbar from './components/Navbar.jsx'
 import Footer from './components/Footer.jsx'
-import ProtectedRoute from './components/ProtectedRoute.jsx'
+import RoleProtectedRoute from './components/RoleProtectedRoute.jsx'
 import Home from './views/Home.jsx'
 import Login from './views/Login.jsx'
 import Register from './views/Register.jsx'
@@ -28,8 +28,8 @@ function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
 
-      {/* Rutas autenticadas generales */}
-      <Route element={<ProtectedRoute />}>
+      {/* Rutas protegidas con control de autenticación y RBAC */}
+      <Route element={<RoleProtectedRoute />}>
         <Route element={<Layout />}>
           <Route index element={<Home />} />
           <Route path="materias" element={<MateriasList />} />

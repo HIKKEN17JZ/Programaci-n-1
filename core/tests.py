@@ -489,6 +489,44 @@ class ExamenTests(BaseAPITestCase):
         response = self.client.delete(f'/api/examenes/{self.examen_docente1.id}/')
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
+    def test_examen_nota_mayor_a_10_rejected(self):
+        """Notas mayores a 10 son rechazadas en el serializer (escala argentina 0 a 10)."""
+        self.client.force_authenticate(user=self.docente1)
+        payload = {
+            'materia': self.materia_docente1.id,
+            'fecha': '2026-07-20',
+            'nota': 11.0,
+            'tipo': 'FIN'
+        }
+        response = self.client.post('/api/examenes/', payload)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('nota', response.data)
+
+    def test_parcial_aprobado_no_auto_aprueba_materia(self):
+        """Un examen de tipo Parcial (PAR) con nota >= 6 NO debe auto-aprobar la materia."""
+        self.materia_docente1.estado = 'REG'
+        self.materia_docente1.save()
+
+        self.client.force_authenticate(user=self.docente1)
+        payload = {
+            'materia': self.materia_docente1.id,
+            'fecha': '2026-05-15',
+            'nota': 8.0,
+            'tipo': 'PAR'
+        }
+        response = self.client.post('/api/examenes/', payload)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.materia_docente1.refresh_from_db()
+        self.assertEqual(self.materia_docente1.estado, 'REG')
+
+    def test_update_examen_cannot_transfer_to_other_user_materia(self):
+        """No se puede reasignar un examen a una materia perteneciente a otro usuario (prevención IDOR)."""
+        self.client.force_authenticate(user=self.docente1)
+        response = self.client.patch(f'/api/examenes/{self.examen_docente1.id}/', {
+            'materia': self.materia_docente2.id
+        })
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
 
 class InfrastructureSmokeTestCase(TestCase):
     """Pruebas de infraestructura y configuración base correspondientes al alcance de TP1."""

@@ -27,20 +27,20 @@ class ExamenSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def validate_nota(self, value):
-        if value is not None and (value < 0 or value > 20):
-            raise serializers.ValidationError("La nota debe estar entre 0 y 20.")
+        if value is not None and (value < 0 or value > 10):
+            raise serializers.ValidationError("La nota debe estar entre 0 y 10.")
         return value
 
     def validate(self, attrs):
         tipo = attrs.get('tipo', getattr(self.instance, 'tipo', None))
         nota = attrs.get('nota', getattr(self.instance, 'nota', None))
 
-        # Al registrar un examen nuevo, la materia no debe estar aprobada previamente
-        if not self.instance:
-            materia = attrs.get('materia')
-            if materia and materia.estado == 'APR':
+        # La materia no debe estar aprobada previamente (salvo que ya perteneciera a la misma en edición)
+        materia = attrs.get('materia', getattr(self.instance, 'materia', None))
+        if materia and materia.estado == 'APR':
+            if not self.instance or self.instance.materia != materia:
                 raise serializers.ValidationError({
-                    'materia': "Esta asignatura ya se encuentra aprobada. No es posible registrar nuevos exámenes para una materia aprobada."
+                    'materia': "Esta asignatura ya se encuentra aprobada. No es posible registrar exámenes para una materia aprobada."
                 })
 
         if tipo == 'PRO':

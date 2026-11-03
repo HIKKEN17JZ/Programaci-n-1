@@ -262,4 +262,69 @@ describe('Cliente API HTTP (TP8 - TDD)', () => {
       }
     )
   })
+
+  it('createApiClient comparte una única llamada de refresh token ante peticiones concurrentes 401', async () => {
+    let refreshCalls = 0
+    let tokensGuardados = { access: 'old-access', refresh: 'valid-refresh' }
+
+    const fakeStorage = {
+      getAccessToken: () => tokensGuardados.access,
+      getRefreshToken: () => tokensGuardados.refresh,
+      setTokens: (nuevos) => { tokensGuardados = nuevos },
+      clearTokens: () => { tokensGuardados = {} },
+    }
+
+    const mockFetch = async (url) => {
+      if (url.includes('/token/refresh/')) {
+        refreshCalls++
+        // Simular latencia de red en renovación
+        await new Promise((resolve) => setTimeout(resolve, 20))
+        return {
+          ok: true,
+          status: 200,
+          headers: new Headers({ 'content-type': 'application/json' }),
+          json: async () => ({ access: 'brand-new-access', refresh: 'brand-new-refresh' }),
+        }
+      }
+
+      // Si la llamada trae el token viejo, simular 401
+      if (url.includes('/materias/') || url.includes('/examenes/')) {
+        if (tokensGuardados.access === 'old-access') {
+          return {
+            ok: false,
+            status: 401,
+            headers: new Headers({ 'content-type': 'application/json' }),
+            json: async () => ({ detail: 'Token inválido' }),
+          }
+        }
+        return {
+          ok: true,
+          status: 200,
+          headers: new Headers({ 'content-type': 'application/json' }),
+          json: async () => ({ data: 'ok' }),
+        }
+      }
+
+      return { ok: true, status: 200, headers: new Headers(), json: async () => ({}) }
+    }
+
+    const client = createApiClient({
+      baseUrl: 'http://localhost:8000/api',
+      getAuthToken: () => tokensGuardados.access,
+      storage: fakeStorage,
+      customFetch: mockFetch,
+    })
+
+    // Dos peticiones concurrentes
+    const [res1, res2] = await Promise.all([
+      client.get('/materias/'),
+      client.get('/examenes/'),
+    ])
+
+    assert.deepStrictEqual(res1, { data: 'ok' })
+    assert.deepStrictEqual(res2, { data: 'ok' })
+    // Solo debe haber ocurrido 1 llamada a refresh token para ambas peticiones
+    assert.strictEqual(refreshCalls, 1)
+    assert.strictEqual(tokensGuardados.access, 'brand-new-access')
+  })
 })

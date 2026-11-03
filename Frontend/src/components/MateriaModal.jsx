@@ -128,6 +128,10 @@ function MateriaModalForm({ materiaAEditar, tieneExamenAprobado = false, onClose
                     <option value={4}>4to Año (4°)</option>
                     <option value={5}>5to Año (5°)</option>
                     <option value={6}>6to Año (6°)</option>
+                    <option value={7}>7mo Año (7°)</option>
+                    <option value={8}>8vo Año (8°)</option>
+                    <option value={9}>9no Año (9°)</option>
+                    <option value={10}>10mo Año (10°)</option>
                     {Number(añoDictado) >= 1900 && (
                       <option value={añoDictado}>Año {añoDictado}</option>
                     )}

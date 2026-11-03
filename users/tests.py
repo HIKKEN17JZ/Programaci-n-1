@@ -134,6 +134,20 @@ class UserAuthenticationTests(APITestCase):
         self.estudiante.refresh_from_db()
         self.assertEqual(self.estudiante.role, User.Role.ESTUDIANTE)
 
+    def test_user_me_username_and_email_are_read_only(self):
+        """Intento de cambiar username o email en /api/users/me/ es ignorado (read_only)."""
+        self.client.force_authenticate(user=self.estudiante)
+        response = self.client.patch('/api/users/me/', {
+            'username': 'hacked_username',
+            'email': 'hacked@email.com',
+            'plan_estudio_nombre': 'Arquitectura'
+        })
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.estudiante.refresh_from_db()
+        self.assertEqual(self.estudiante.username, 'alumno_user')
+        self.assertEqual(self.estudiante.email, 'alumno@test.edu.ar')
+        self.assertEqual(self.estudiante.plan_estudio_nombre, 'Arquitectura')
+
     def test_user_me_anonymous_forbidden(self):
         """Petición anónima a /api/users/me/ devuelve 401 Unauthorized."""
         response = self.client.get('/api/users/me/')

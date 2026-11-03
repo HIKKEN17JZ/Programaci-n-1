@@ -58,16 +58,21 @@ class ExamenViewSet(viewsets.ModelViewSet):
         if materia.usuario != user and not is_admin:
             raise PermissionDenied("No puedes crear un examen para una materia que no te pertenece.")
         examen = serializer.save()
-        # Auto-aprobar materia si la nota obtenida es aprobatoria (>= 6)
-        if examen.nota is not None and float(examen.nota) >= 6:
+        # Auto-aprobar materia únicamente si la nota es >= 6 y es examen de mesa (Final o Promoción)
+        if examen.tipo in ['FIN', 'PRO'] and examen.nota is not None and float(examen.nota) >= 6:
             if materia.estado != 'APR':
                 materia.estado = 'APR'
                 materia.save(update_fields=['estado'])
 
     def perform_update(self, serializer):
+        user = self.request.user
+        is_admin = getattr(user, 'role', None) == User.Role.ADMIN or user.is_superuser
+        materia_nueva = serializer.validated_data.get('materia', serializer.instance.materia)
+        if materia_nueva.usuario != user and not is_admin:
+            raise PermissionDenied("No puedes asociar este examen a una materia que no te pertenece.")
         examen = serializer.save()
-        # Auto-aprobar materia si la nota obtenida es aprobatoria (>= 6)
-        if examen.nota is not None and float(examen.nota) >= 6:
+        # Auto-aprobar materia únicamente si la nota es >= 6 y es examen de mesa (Final o Promoción)
+        if examen.tipo in ['FIN', 'PRO'] and examen.nota is not None and float(examen.nota) >= 6:
             materia = examen.materia
             if materia.estado != 'APR':
                 materia.estado = 'APR'
