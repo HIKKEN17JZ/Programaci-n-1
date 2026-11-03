@@ -61,8 +61,8 @@ class BaseAPITestCase(APITestCase):
         self.examen_docente1 = Examen.objects.create(
             materia=self.materia_docente1,
             fecha='2026-06-15',
-            nota=8.5,
-            tipo='PAR'
+            nota=4.0,
+            tipo='FIN'
         )
 
 
@@ -389,7 +389,7 @@ class ExamenTests(BaseAPITestCase):
             'materia': self.materia_docente1.id,
             'fecha': '2026-07-20',
             'nota': -1.0,
-            'tipo': 'PAR'
+            'tipo': 'FIN'
         }
         response = self.client.post('/api/examenes/', payload)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -402,7 +402,7 @@ class ExamenTests(BaseAPITestCase):
             'materia': self.materia_docente1.id,
             'fecha': '2026-07-20',
             'nota': 25.0,
-            'tipo': 'PAR'
+            'tipo': 'FIN'
         }
         response = self.client.post('/api/examenes/', payload)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -502,11 +502,8 @@ class ExamenTests(BaseAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('nota', response.data)
 
-    def test_parcial_aprobado_no_auto_aprueba_materia(self):
-        """Un examen de tipo Parcial (PAR) con nota >= 6 NO debe auto-aprobar la materia."""
-        self.materia_docente1.estado = 'REG'
-        self.materia_docente1.save()
-
+    def test_tipo_parcial_rechazado_solo_mesas_de_examen(self):
+        """El tipo 'PAR' es rechazado con 400 porque el sistema gestiona exclusivamente mesas de examen (FIN y PRO)."""
         self.client.force_authenticate(user=self.docente1)
         payload = {
             'materia': self.materia_docente1.id,
@@ -515,9 +512,28 @@ class ExamenTests(BaseAPITestCase):
             'tipo': 'PAR'
         }
         response = self.client.post('/api/examenes/', payload)
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.materia_docente1.refresh_from_db()
-        self.assertEqual(self.materia_docente1.estado, 'REG')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('tipo', response.data)
+
+    def test_materia_sincronizar_estado_aprobacion_metodo_de_dominio(self):
+        """El método de dominio sincronizar_estado_aprobacion conmuta a APR con examen aprobado y vuelve a REG si se degrada."""
+        materia = self.materia_docente1
+        materia.estado = 'REG'
+        materia.save()
+
+        # Sin examen aprobado -> permanece en REG
+        materia.sincronizar_estado_aprobacion()
+        self.assertEqual(materia.estado, 'REG')
+
+        # Con examen FIN nota >= 6 -> pasa a APR
+        ex = Examen.objects.create(materia=materia, fecha='2026-12-01', nota=7.0, tipo='FIN')
+        materia.sincronizar_estado_aprobacion()
+        self.assertEqual(materia.estado, 'APR')
+
+        # Si el examen se borra -> retorna a REG
+        ex.delete()
+        materia.sincronizar_estado_aprobacion()
+        self.assertEqual(materia.estado, 'REG')
 
     def test_update_examen_cannot_transfer_to_other_user_materia(self):
         """No se puede reasignar un examen a una materia perteneciente a otro usuario (prevención IDOR)."""
@@ -603,7 +619,7 @@ class TP2ModelAndAPISmokeTestCase(BaseAPITestCase):
         """Verifica que los métodos __str__ de los modelos principales sean legibles y semánticos."""
         self.assertEqual(str(self.facultad), "Facultad de Ingeniería")
         self.assertEqual(str(self.materia_docente1), f"Programación I ({self.docente1.username})")
-        self.assertIn("PAR - Programación I - Nota: 8.5", str(self.examen_docente1))
+        self.assertIn("FIN - Programación I - Nota: 4", str(self.examen_docente1))
 
     def test_openapi_schema_endpoint_accessible(self):
         """Verifica que el endpoint de esquema OpenAPI (/api/schema/) responda HTTP 200."""

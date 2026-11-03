@@ -36,9 +36,27 @@ class Materia(models.Model):
     def __str__(self):
         return f"{self.nombre} ({self.usuario.username})"
 
+    def sincronizar_estado_aprobacion(self):
+        """
+        Garantiza la consistencia bidireccional del estado de la materia (Single Source of Truth):
+        - Si cuenta con al menos una mesa de examen (FIN o PRO) con nota >= 6, asegura estado 'APR'.
+        - Si estaba en 'APR' pero ya no cuenta con ningún examen aprobado (se eliminó o se editó la nota),
+          restituye el estado a 'REG' (regular) para evitar estados aprobados huérfanos.
+        """
+        tiene_aprobado = self.examenes.filter(
+            nota__isnull=False,
+            nota__gte=6
+        ).exists()
+
+        if tiene_aprobado and self.estado != 'APR':
+            self.estado = 'APR'
+            self.save(update_fields=['estado'])
+        elif not tiene_aprobado and self.estado == 'APR':
+            self.estado = 'REG'
+            self.save(update_fields=['estado'])
+
 class Examen(models.Model):
     TIPOS_EXAMEN = [
-        ('PAR', 'Parcial'),
         ('FIN', 'Final'),
         ('PRO', 'Promoción'),
     ]
