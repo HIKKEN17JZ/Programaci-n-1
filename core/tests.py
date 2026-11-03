@@ -659,5 +659,15 @@ class TP4EdgeCasesTestCase(BaseAPITestCase):
         self.assertIn('nombre', response.data)
 
 
+class TP10CloudDeploymentTestCase(TestCase):
+    """Pruebas de preparación y monitoreo para despliegue en la nube (TP10)."""
+
+    def test_health_check_endpoint(self):
+        """GET /api/health/ devuelve 200 OK y JSON de status para monitoreo en la nube."""
+        response = self.client.get('/api/health/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.json(), {"status": "ok", "service": "api"})
+
+
 
 

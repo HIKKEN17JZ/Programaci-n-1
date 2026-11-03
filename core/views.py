@@ -1,9 +1,29 @@
 from rest_framework import viewsets, permissions
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied
+from drf_spectacular.utils import extend_schema, OpenApiTypes
 from users.models import User
 from users.permissions import IsAdminOrDocente, IsAdminOnly, IsOwnerOrReadOnly
 from .models import Facultad, Materia, Examen
 from .serializers import FacultadSerializer, MateriaSerializer, ExamenSerializer
+
+@extend_schema(
+    summary="Health Check del servicio",
+    description="Endpoint de monitoreo y health check para servicios en la nube (TP10).",
+    responses={200: OpenApiTypes.OBJECT}
+)
+@api_view(['GET'])
+@permission_classes([permissions.AllowAny])
+def health_check(request):
+    """
+    Endpoint de monitoreo y health check para servicios en la nube (TP10).
+    Devuelve status 200 OK con el estado del servicio API.
+    """
+    return Response({
+        "status": "ok",
+        "service": "api"
+    })
 
 class FacultadViewSet(viewsets.ModelViewSet):
     """
